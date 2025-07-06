@@ -1,36 +1,97 @@
-import express from "express"
-import cors from "cors"
-import { MongoClient, ObjectId } from "mongodb" // Añade ObjectId aquí
-import dotenv from "dotenv"
-import jwt from "jsonwebtoken"
-import bcrypt from "bcrypt"
+import express from "express";
+import cors from "cors";
+import { MongoClient } from "mongodb";
+import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
-dotenv.config()
-const app = express()
+// Configuración inicial
+dotenv.config();
+const app = express();
 
-// Configuración CORS
+// Middlewares
 const corsOptions = {
   origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
+};
+
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use("/uploads", express.static("uploads"));
+
+// Conexión a MongoDB (versión corregida)
+let db, client;
+
+async function connectDB() {
+  try {
+    if (!process.env.MONGO_URI) {
+      throw new Error("MONGO_URI no está definido en .env");
+    }
+
+    client = new MongoClient(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+
+    await client.connect();
+    db = client.db("Miapp");
+    console.log("🟢 Conectado a MongoDB");
+  } catch (error) {
+    console.error("🔴 Error de conexión a MongoDB:", error.message);
+    process.exit(1);
+  }
 }
 
-app.use(cors(corsOptions))
-app.use(express.json())
-app.use("/uploads", express.static("uploads"))
-
-// Conexión a MongoDB
-let db, cliente
-try {
-  cliente = new MongoClient(process.env.MONGO_URI)
-  await cliente.connect()
-  db = cliente.db("Miapp")
-  console.log("Conectado a MongoDB")
-} catch (error) {
-  console.error("Error de conexión a MongoDB:", error)
-  process.exit(1)
+// Inicia el servidor después de conectar a MongoDB
+async function startServer() {
+  await connectDB();
+  
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, () => {
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  });
 }
+
+startServer().catch(console.error);
+
+// Rutas (ejemplo básico)
+app.get("/", (req, res) => {
+  res.json({ message: "API funcionando" });
+});
+
+// Manejo de errores global
+process.on("unhandledRejection", (err) => {
+  console.error("Error no manejado:", err);
+  if (client) client.close();
+  process.exit(1);
+});
+
+/** 
+// Inicia el servidor después de conectar a MongoDB
+async function startServer() {
+  await connectDB();
+  
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, () => {
+    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  });
+}
+
+startServer().catch(console.error);
+
+// Rutas (ejemplo básico)
+app.get("/", (req, res) => {
+  res.json({ message: "API funcionando" });
+});
+
+// Manejo de errores global
+process.on("unhandledRejection", (err) => {
+  console.error("Error no manejado:", err);
+  if (client) client.close();
+  process.exit(1);
+});
 
 
 
@@ -598,4 +659,4 @@ process.on('SIGINT', async () => {
 // Iniciar servidor
 app.listen(3000, () => {
     console.log("Servidor corriendo en http://localhost:3000")
-})
+}) */
