@@ -23,7 +23,7 @@ const routes = [
         path: '/pago/tarjeta',
         name: 'pago',
         component: () => import('@/views/CardPayment.vue'),
-        meta: { requiresAuth: true }
+        meta: { public: true }
     },
     {
         path: '/logout',
@@ -44,19 +44,29 @@ const routes = [
         path: '/pago/tarjeta',
         name: 'pago',
         component: () => import('@/views/CardPayment.vue'),
-        meta: { requiresAuth: true }
+        meta: { public: true }
+    },
+      {
+        path: '/pedidos',
+        name: 'pedidos',
+        component: () => import('@/views/MisPedidos.vue'),
+        meta: { public: true }
     },
     {
         path: '/dashboard',
         name: 'dashboard',
         component: () => import('@/views/Dashboard.vue'),
-        meta: { requiresAuth: true }
+        meta: { public: true}
     },
     {
         path: '/carrito',
         name: 'Cart',
         component: () => import('@/views/CartView.vue'),
-        meta: { requiresAuth: true }
+        meta: { public: true }
+    },
+    {
+      path: '/auth-required',
+      component: () => import('@/views/Advertencia.vue') // La página que creamos arriba
     }
 ]
 
@@ -66,17 +76,13 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-    const authStore = useAuthStore()
-    
-    if(to.meta.requiresAuth && !authStore.isAuthenticated) {
-        return next('/login')
-    }
-    
-    if(to.meta.public && authStore.isAuthenticated) {
-        return next('/dashboard')
-    }
-    
+  const authStore = useAuthStore()
+  
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    next('/auth-required')
+  } else {
     next()
+  }
 })
 
 export default router

@@ -1,15 +1,13 @@
 import express from "express";
 import cors from "cors";
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import dotenv from "dotenv";
-import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
-// Configuración inicial
 dotenv.config();
 const app = express();
 
-// Middlewares
 const corsOptions = {
   origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -21,8 +19,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// Conexión a MongoDB (versión corregida)
-let db, client;
+let db;
 
 async function connectDB() {
   try {
@@ -30,207 +27,182 @@ async function connectDB() {
       throw new Error("MONGO_URI no está definido en .env");
     }
 
-    client = new MongoClient(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-
+    const client = new MongoClient(process.env.MONGO_URI);
     await client.connect();
-    db = client.db("Miapp");
+    db = client.db("tienda_online");
     console.log("🟢 Conectado a MongoDB");
+    
+    // Iniciar el servidor solo después de conectar a la DB
+    const PORT = process.env.PORT || 4000;
+    app.listen(PORT, () => {
+      console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    });
+    
+    return db;
   } catch (error) {
     console.error("🔴 Error de conexión a MongoDB:", error.message);
     process.exit(1);
   }
 }
 
-// Inicia el servidor después de conectar a MongoDB
-async function startServer() {
-  await connectDB();
-  
-  const PORT = process.env.PORT || 4000;
-  app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
-  });
-}
+// Middleware para verificar conexión a DB
+const checkDB = (req, res, next) => {
+  if (!db) {
+    return res.status(500).json({ error: "Base de datos no conectada" });
+  }
+  next();
+};
 
-startServer().catch(console.error);
-
-// Rutas (ejemplo básico)
+// Rutas
 app.get("/", (req, res) => {
   res.json({ message: "API funcionando" });
 });
-
-// Manejo de errores global
-process.on("unhandledRejection", (err) => {
-  console.error("Error no manejado:", err);
-  if (client) client.close();
-  process.exit(1);
-});
-
-/** 
-// Inicia el servidor después de conectar a MongoDB
-async function startServer() {
-  await connectDB();
-  
-  const PORT = process.env.PORT || 4000;
-  app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
-  });
-}
-
-startServer().catch(console.error);
-
-// Rutas (ejemplo básico)
-app.get("/", (req, res) => {
-  res.json({ message: "API funcionando" });
-});
-
-// Manejo de errores global
-process.on("unhandledRejection", (err) => {
-  console.error("Error no manejado:", err);
-  if (client) client.close();
-  process.exit(1);
-});
-
-
-
-const usuarios = db.collection("usuarios")
-app.post("/register", async (req, res) => {
-    try {
-        const { nombre, email, password } = req.body
-        
-        if (!nombre || !email || !password) {
-            return res.status(400).json({ mensaje: "Todos los campos son requeridos" })
-        }
-
-        const existente = await usuarios.findOne({ email })
-        if(existente) {
-            return res.status(400).json({ mensaje: "El usuario ya existe" })
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10)
-        const result = await usuarios.insertOne({ 
-            nombre, 
-            email, 
-            password: hashedPassword,
-            createdAt: new Date()
-        })
-        
-        res.status(201).json({ 
-            mensaje: "Usuario registrado correctamente",
-            id: result.insertedId
-        })
-    } catch (error) {
-        console.error("Error en registro:", error)
-        res.status(500).json({ mensaje: "Error interno del servidor" })
-    }
-})
 
 app.get('/health', (req, res) => {
-    res.json({
-        status: 'OK',
-        db: db ? 'Connected' : 'Disconnected',
-        time: new Date()
-    })
-})
+  res.json({
+    status: 'OK',
+    db: db ? 'Connected' : 'Disconnected',
+    time: new Date()
+  });
+});
 
+// Registro de usuario
+app.post("/register", checkDB, async (req, res) => {
+  try {
+    const { nombre, email, password } = req.body;
+    
+    if (!nombre || !email || !password) {
+      return res.status(400).json({ mensaje: "Todos los campos son requeridos" });
+    }
+
+    const existente = await db.collection("usuarios").findOne({ email });
+    if (existente) {
+      return res.status(400).json({ mensaje: "El usuario ya existe" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const result = await db.collection("usuarios").insertOne({ 
+      nombre, 
+      email, 
+      password: hashedPassword,
+      createdAt: new Date()
+    });
+    
+    res.status(201).json({ 
+      mensaje: "Usuario registrado correctamente",
+      id: result.insertedId
+    });
+  } catch (error) {
+    console.error("Error en registro:", error);
+    res.status(500).json({ mensaje: "Error interno del servidor" });
+  }
+});
 
 // Login
-app.post("/login", async (req, res) => {
-    try {
-        const { email, password } = req.body
-        
-        if (!email || !password) {
-            return res.status(400).json({ mensaje: "Email y contraseña son requeridos" })
-        }
-
-        const usuario = await usuarios.findOne({ email })
-        if(!usuario) {
-            return res.status(400).json({ mensaje: "Credenciales incorrectas" })
-        }
-
-        const passwordMatch = await bcrypt.compare(password, usuario.password)
-        if(!passwordMatch) {
-            return res.status(400).json({ mensaje: "Credenciales incorrectas" })
-        }
-
-        const token = jwt.sign(
-            { 
-                id: usuario._id.toString(),
-                email: usuario.email,
-                nombre: usuario.nombre
-            },
-            process.env.JWT_SECRET,
-            { expiresIn: '1h' }
-        )
-
-        res.json({ 
-            mensaje: "Bienvenido", 
-            nombre: usuario.nombre,
-            email: usuario.email,
-            token
-        })
-    } catch (error) {
-        console.error("Error en login:", error)
-        res.status(500).json({ mensaje: "Error interno del servidor" })
+app.post("/login", checkDB, async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ mensaje: "Email y contraseña son requeridos" });
     }
-})
+
+    const usuario = await db.collection("usuarios").findOne({ email });
+    if (!usuario) {
+      return res.status(400).json({ mensaje: "Credenciales incorrectas" });
+    }
+
+    const passwordMatch = await bcrypt.compare(password, usuario.password);
+    if (!passwordMatch) {
+      return res.status(400).json({ mensaje: "Credenciales incorrectas" });
+    }
+
+    const token = jwt.sign(
+      { 
+        id: usuario._id.toString(),
+        email: usuario.email,
+        nombre: usuario.nombre
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    res.json({ 
+      mensaje: "Bienvenido", 
+      nombre: usuario.nombre,
+      email: usuario.email,
+      token
+    });
+  } catch (error) {
+    console.error("Error en login:", error);
+    res.status(500).json({ mensaje: "Error interno del servidor" });
+  }
+});
 
 // Middleware de autenticación
 function autenticar(req, res, next) {
-    const authHeader = req.headers['authorization']
-    const token = authHeader && authHeader.split(' ')[1]
-    
-    if(!token) {
-        return res.status(401).json({ mensaje: "Acceso no autorizado" })
-    }
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  if (!token) {
+    return res.status(401).json({ mensaje: "Acceso no autorizado" });
+  }
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-        if(err) {
-            console.error("Error verificando token:", err)
-            return res.status(401).json({ mensaje: "Token inválido o expirado" })
-        }
-        
-        req.usuario = {
-            id: decoded.id,
-            email: decoded.email,
-            nombre: decoded.nombre
-        }
-        next()
-    })
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      console.error("Error verificando token:", err);
+      return res.status(401).json({ mensaje: "Token inválido o expirado" });
+    }
+    
+    req.usuario = {
+      id: decoded.id,
+      email: decoded.email,
+      nombre: decoded.nombre
+    };
+    next();
+  });
 }
 
 // Ruta de perfil
-// En tu ruta /perfil (backend)
-app.get('/perfil', autenticar, async (req, res) => {
+app.get('/perfil', checkDB, autenticar, async (req, res) => {
   try {
-    const usuario = await usuarios.findOne({ 
+    const usuario = await db.collection("usuarios").findOne({ 
       _id: new ObjectId(req.usuario.id) 
-    })
+    });
     
     if (!usuario) {
-      return res.status(404).json({ error: 'Usuario no encontrado' })
+      return res.status(404).json({ error: 'Usuario no encontrado' });
     }
     
-    res.json({ usuario })
+    // No devolver la contraseña
+    const { password, ...userData } = usuario;
+    res.json({ usuario: userData });
   } catch (error) {
-    console.error('Error en perfil:', error)
-    res.status(500).json({ error: 'Error al cargar perfil' })
+    console.error('Error en perfil:', error);
+    res.status(500).json({ error: 'Error al cargar perfil' });
   }
-})
+});
 
 // Productos
-app.get("/productos", async (req, res) => {
-    try {
-        const productos = await db.collection("productos").find().toArray()
-        res.json(productos)
-    } catch (error) {
-        console.error("Error obteniendo productos:", error)
-        res.status(500).json({ mensaje: "Error al obtener productos" })
-    }
-})
+app.get("/productos", checkDB, async (req, res) => {
+  try {
+    const productos = await db.collection("productos").find().toArray();
+    res.json(productos);
+  } catch (error) {
+    console.error("Error obteniendo productos:", error);
+    res.status(500).json({ mensaje: "Error al obtener productos" });
+  }
+});
 
+// Manejo de errores
+process.on("unhandledRejection", (err) => {
+  console.error("Error no manejado:", err);
+  process.exit(1);
+});
+
+// Conectar a la base de datos e iniciar servidor
+connectDB().catch(console.error);
+/*
 // Modelo de datos para el carrito
 app.post('/carrito', autenticar, async (req, res) => {
   try {

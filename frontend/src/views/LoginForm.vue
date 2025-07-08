@@ -24,6 +24,9 @@ const handleSubmit = async () => {
     loading.value = false
   }
 }
+const continueWithoutAccount = () => {
+  router.push('/dashboard') // Redirige a la página principal sin autenticación
+}
 </script>
 
 <template>
@@ -123,6 +126,12 @@ const handleSubmit = async () => {
                   </svg>
                   CARGANDO...
                 </span>
+              </button>
+              <button
+                @click="continueWithoutAccount"
+                class="w-full py-3 px-4 bg-white border border-pink-500 text-pink-500 hover:bg-pink-50 font-medium rounded-md transition-colors mt-2"
+              >
+                Continuar sin cuenta
               </button>
               
               <!-- Divider -->

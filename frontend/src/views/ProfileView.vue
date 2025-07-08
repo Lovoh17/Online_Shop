@@ -7,17 +7,40 @@ const authStore = useAuthStore()
 const router = useRouter()
 const loading = ref(false)
 const error = ref(null)
+const editMode = ref(false)
+const editForm = ref({
+  nombre: '',
+  telefono: '',
+  direccion: {
+    calle: '',
+    ciudad: '',
+    pais: '',
+    codigoPostal: ''
+  }
+})
 
 const userData = computed(() => ({
   nombre: authStore.user?.nombre || 'No especificado',
   email: authStore.user?.email || 'No especificado',
-  miembroDesde: authStore.user?.createdAt 
-    ? authStore.user.createdAt.toLocaleDateString('es-ES', {
+  telefono: authStore.user?.telefono || 'No especificado',
+  rol: authStore.user?.rol || 'cliente',
+  direccion: authStore.user?.direccion || {
+    calle: 'No especificado',
+    ciudad: 'No especificado',
+    pais: 'No especificado',
+    codigoPostal: 'No especificado'
+  },
+  miembroDesde: authStore.user?.fechaRegistro || authStore.user?.createdAt
+    ? new Date(authStore.user.fechaRegistro || authStore.user.createdAt).toLocaleDateString('es-ES', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'
       })
-    : 'No disponible'
+    : 'No disponible',
+  // Dirección completa formateada
+  direccionCompleta: authStore.user?.direccion 
+    ? `${authStore.user.direccion.calle}, ${authStore.user.direccion.ciudad}, ${authStore.user.direccion.pais} ${authStore.user.direccion.codigoPostal}`
+    : 'No especificada'
 }))
 
 onMounted(async () => {
@@ -33,6 +56,63 @@ onMounted(async () => {
 
 const handleLogout = () => {
   authStore.logout()
+}
+
+const startEdit = () => {
+  editMode.value = true
+  editForm.value = {
+    nombre: authStore.user?.nombre || '',
+    telefono: authStore.user?.telefono || '',
+    direccion: {
+      calle: authStore.user?.direccion?.calle || '',
+      ciudad: authStore.user?.direccion?.ciudad || '',
+      pais: authStore.user?.direccion?.pais || '',
+      codigoPostal: authStore.user?.direccion?.codigoPostal || ''
+    }
+  }
+}
+
+const cancelEdit = () => {
+  editMode.value = false
+  editForm.value = {
+    nombre: '',
+    telefono: '',
+    direccion: {
+      calle: '',
+      ciudad: '',
+      pais: '',
+      codigoPostal: ''
+    }
+  }
+}
+
+const saveChanges = async () => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    const response = await authStore.authenticatedFetch(`http://localhost:4000/perfil`, {
+      method: 'PUT',
+      body: JSON.stringify(editForm.value)
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      // Actualizar store con nueva información
+      authStore.user = { ...authStore.user, ...data.usuario }
+      editMode.value = false
+      
+      // Mostrar mensaje de éxito
+      alert('Perfil actualizado correctamente')
+    } else {
+      const errorData = await response.json()
+      throw new Error(errorData.mensaje || 'Error al actualizar perfil')
+    }
+  } catch (err) {
+    error.value = err.message
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -155,14 +235,21 @@ const handleLogout = () => {
                 <div>
                   <h2 class="text-xl font-bold">Hola, {{ userData.nombre }}</h2>
                   <p class="text-sm opacity-90">Bienvenido a tu área personal</p>
+                  <div class="flex items-center mt-2">
+                    <span class="bg-white bg-opacity-20 text-xs px-2 py-1 rounded-full mr-2">
+                      {{ userData.rol.toUpperCase() }}
+                    </span>
+                    <span class="text-sm opacity-90">Miembro desde {{ userData.miembroDesde }}</span>
+                  </div>
                 </div>
                 <div class="hidden md:block">
-                  <div class="flex items-center bg-white bg-opacity-20 rounded-full px-4 py-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                    </svg>
-                    <span class="ml-2 text-sm">Miembro desde {{ userData.miembroDesde }}</span>
-                  </div>
+                  <button
+                    @click="startEdit"
+                    v-if="!editMode"
+                    class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  >
+                    Editar perfil
+                  </button>
                 </div>
               </div>
             </div>
@@ -193,9 +280,91 @@ const handleLogout = () => {
               </div>
 
               <div v-else>
-                <!-- Sección de información personal -->
-                <div class="mb-8">
-                  <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2 mb-4">Información personal</h3>
+                <!-- Modo edición -->
+                <div v-if="editMode" class="mb-8">
+                  <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Editar información personal</h3>
+                    <div class="flex space-x-2">
+                      <button
+                        @click="saveChanges"
+                        :disabled="loading"
+                        class="px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 disabled:opacity-50 text-sm font-medium"
+                      >
+                        {{ loading ? 'Guardando...' : 'Guardar' }}
+                      </button>
+                      <button
+                        @click="cancelEdit"
+                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 text-sm font-medium"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
+                      <input
+                        v-model="editForm.nombre"
+                        type="text"
+                        class="w-full p-3 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                        placeholder="Ingresa tu nombre completo"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                      <input
+                        v-model="editForm.telefono"
+                        type="tel"
+                        class="w-full p-3 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                        placeholder="Ingresa tu teléfono"
+                      />
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+                      <input
+                        v-model="editForm.direccion.calle"
+                        type="text"
+                        class="w-full p-3 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500 mb-3"
+                        placeholder="Calle y número"
+                      />
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input
+                          v-model="editForm.direccion.ciudad"
+                          type="text"
+                          class="w-full p-3 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                          placeholder="Ciudad"
+                        />
+                        <input
+                          v-model="editForm.direccion.pais"
+                          type="text"
+                          class="w-full p-3 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                          placeholder="País"
+                        />
+                        <input
+                          v-model="editForm.direccion.codigoPostal"
+                          type="text"
+                          class="w-full p-3 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500"
+                          placeholder="Código postal"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Modo visualización -->
+                <div v-else class="mb-8">
+                  <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">Información personal</h3>
+                    <button
+                      @click="startEdit"
+                      class="md:hidden px-4 py-2 bg-pink-500 text-white rounded-md hover:bg-pink-600 text-sm font-medium"
+                    >
+                      Editar
+                    </button>
+                  </div>
                   
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -213,9 +382,23 @@ const handleLogout = () => {
                     </div>
                     
                     <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                      <div class="bg-gray-50 p-3 rounded-md border border-gray-200">
+                        {{ userData.telefono }}
+                      </div>
+                    </div>
+                    
+                    <div>
                       <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de registro</label>
                       <div class="bg-gray-50 p-3 rounded-md border border-gray-200">
                         {{ userData.miembroDesde }}
+                      </div>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+                      <div class="bg-gray-50 p-3 rounded-md border border-gray-200">
+                        {{ userData.direccionCompleta }}
                       </div>
                     </div>
                     
@@ -315,8 +498,5 @@ const handleLogout = () => {
   50% {
     opacity: 0.5;
   }
-}
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 </style>
