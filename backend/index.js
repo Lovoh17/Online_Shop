@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 
 dotenv.config();
 const app = express();
+const uri = "mongodb+srv://ll22017:<db_password>@clusterlino.1x3evne.mongodb.net/?retryWrites=true&w=majority&appName=ClusterLino";
 
 const corsOptions = {
   origin: 'http://localhost:5173',
