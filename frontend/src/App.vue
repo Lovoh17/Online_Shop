@@ -1,33 +1,25 @@
 <script setup>
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import Navbar from '@/components/navbar.vue'
+import Navbar from '@/components/Navbar.vue'
+import Footer from '@/components/Foother.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-// Control de visibilidad del navbar
 const showNavbar = computed(() => {
+  return !route.meta.hideNavbar && route.name !== 'login' && route.name !== 'register'
+})
+
+// También mostrar footer en las mismas condiciones que navbar
+const showFooter = computed(() => {
   return !route.meta.hideNavbar && route.name !== 'login' && route.name !== 'register'
 })
 
 // Verificación de autenticación global
 watch(
-  /*() => route.path,
-  (newPath) => {
-    // Lista de rutas que no requieren autenticación
-    const publicRoutes = ['/', '/login', '/register', '/about']
-    
-    if (!publicRoutes.includes(newPath)) {
-      // Si la ruta no es pública y el usuario no está autenticado
-      if (!authStore.isAuthenticated) {
-        router.push('/login')
-      }
-    }
-  },
-  { immediate: true }*/
 )
 
 // Manejo de errores globales
@@ -64,10 +56,8 @@ window.addEventListener('error', (event) => {
     </transition>
   </router-view>
 
-  <!-- Footer global (opcional) -->
-  <footer v-if="showNavbar" class="global-footer">
-    <!-- Contenido del footer -->
-  </footer>
+  <!-- Footer global usando el componente -->
+  <Footer v-if="showFooter" />
 
   <!-- Componente global de notificaciones (opcional) -->
   <NotificationsContainer />
@@ -85,38 +75,6 @@ window.addEventListener('error', (event) => {
   flex-direction: column;
 }
 
-/* Transiciones */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-.slide-enter-active,
-.slide-leave-active {
-  transition: transform 0.3s ease;
-}
-
-.slide-enter-from {
-  transform: translateX(100%);
-}
-
-.slide-leave-to {
-  transform: translateX(-100%);
-}
-
-/* Footer */
-.global-footer {
-  margin-top: auto;
-  padding: 1rem;
-  background-color: #f8f9fa;
-  text-align: center;
-}
 
 /* Responsividad */
 @media (max-width: 768px) {

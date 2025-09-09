@@ -203,7 +203,7 @@ process.on("unhandledRejection", (err) => {
 
 // Conectar a la base de datos e iniciar servidor
 connectDB().catch(console.error);
-/*
+
 // Modelo de datos para el carrito
 app.post('/carrito', autenticar, async (req, res) => {
   try {
@@ -330,7 +330,7 @@ app.get('/carrito', autenticar, async (req, res) => {
   }
 })
 
-// Actualizar cantidad en carrito
+
 app.put('/carrito/:productoId', autenticar, async (req, res) => {
   try {
     const { cantidad } = req.body
@@ -632,4 +632,4 @@ process.on('SIGINT', async () => {
 // Iniciar servidor
 app.listen(3000, () => {
     console.log("Servidor corriendo en http://localhost:3000")
-}) */
+}) 
