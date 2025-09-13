@@ -32,13 +32,13 @@ async function connectDB() {
     await client.connect();
     db = client.db("tienda_online");
     console.log("🟢 Conectado a MongoDB");
-    
+
     // Iniciar el servidor solo después de conectar a la DB
     const PORT = process.env.PORT || 4000;
     app.listen(PORT, () => {
       console.log(`Servidor corriendo en http://localhost:${PORT}`);
     });
-    
+
     return db;
   } catch (error) {
     console.error("🔴 Error de conexión a MongoDB:", error.message);
@@ -71,7 +71,7 @@ app.get('/health', (req, res) => {
 app.post("/register", checkDB, async (req, res) => {
   try {
     const { nombre, email, password } = req.body;
-    
+
     if (!nombre || !email || !password) {
       return res.status(400).json({ mensaje: "Todos los campos son requeridos" });
     }
@@ -82,14 +82,14 @@ app.post("/register", checkDB, async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const result = await db.collection("usuarios").insertOne({ 
-      nombre, 
-      email, 
+    const result = await db.collection("usuarios").insertOne({
+      nombre,
+      email,
       password: hashedPassword,
       createdAt: new Date()
     });
-    
-    res.status(201).json({ 
+
+    res.status(201).json({
       mensaje: "Usuario registrado correctamente",
       id: result.insertedId
     });
@@ -103,7 +103,7 @@ app.post("/register", checkDB, async (req, res) => {
 app.post("/login", checkDB, async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
     if (!email || !password) {
       return res.status(400).json({ mensaje: "Email y contraseña son requeridos" });
     }
@@ -119,7 +119,7 @@ app.post("/login", checkDB, async (req, res) => {
     }
 
     const token = jwt.sign(
-      { 
+      {
         id: usuario._id.toString(),
         email: usuario.email,
         nombre: usuario.nombre
@@ -128,8 +128,8 @@ app.post("/login", checkDB, async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    res.json({ 
-      mensaje: "Bienvenido", 
+    res.json({
+      mensaje: "Bienvenido",
       nombre: usuario.nombre,
       email: usuario.email,
       token
@@ -144,7 +144,7 @@ app.post("/login", checkDB, async (req, res) => {
 function autenticar(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
-  
+
   if (!token) {
     return res.status(401).json({ mensaje: "Acceso no autorizado" });
   }
@@ -154,7 +154,7 @@ function autenticar(req, res, next) {
       console.error("Error verificando token:", err);
       return res.status(401).json({ mensaje: "Token inválido o expirado" });
     }
-    
+
     req.usuario = {
       id: decoded.id,
       email: decoded.email,
@@ -167,14 +167,14 @@ function autenticar(req, res, next) {
 // Ruta de perfil
 app.get('/perfil', checkDB, autenticar, async (req, res) => {
   try {
-    const usuario = await db.collection("usuarios").findOne({ 
-      _id: new ObjectId(req.usuario.id) 
+    const usuario = await db.collection("usuarios").findOne({
+      _id: new ObjectId(req.usuario.id)
     });
-    
+
     if (!usuario) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
-    
+
     // No devolver la contraseña
     const { password, ...userData } = usuario;
     res.json({ usuario: userData });
@@ -208,9 +208,9 @@ connectDB().catch(console.error);
 app.post('/carrito', autenticar, async (req, res) => {
   try {
     const { productoId, cantidad } = req.body
-    
+
     if (!productoId || !cantidad || cantidad < 1) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
         error: 'Datos inválidos',
         details: {
@@ -221,26 +221,26 @@ app.post('/carrito', autenticar, async (req, res) => {
     }
 
     if (!ObjectId.isValid(productoId)) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: 'ID de producto inválido' 
+        error: 'ID de producto inválido'
       })
     }
 
-    const producto = await db.collection('productos').findOne({ 
-      _id: new ObjectId(productoId) 
+    const producto = await db.collection('productos').findOne({
+      _id: new ObjectId(productoId)
     })
-    
+
     if (!producto) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
         error: 'Producto no encontrado',
-        productoId 
+        productoId
       })
     }
-    
+
     let carrito = await db.collection('carritos').findOne({ usuarioId: new ObjectId(req.usuario.id) })
-    
+
     if (!carrito) {
       carrito = {
         usuarioId: new ObjectId(req.usuario.id),
@@ -256,11 +256,11 @@ app.post('/carrito', autenticar, async (req, res) => {
         }],
         actualizadoEn: new Date()
       }
-      
+
       await db.collection('carritos').insertOne(carrito)
     } else {
       const itemExistente = carrito.items.find(item => item.producto._id.toString() === productoId)
-      
+
       if (itemExistente) {
         itemExistente.cantidad += cantidad
       } else {
@@ -275,57 +275,57 @@ app.post('/carrito', autenticar, async (req, res) => {
           cantidad: cantidad
         })
       }
-      
+
       carrito.actualizadoEn = new Date()
       await db.collection('carritos').updateOne(
         { _id: carrito._id },
         { $set: carrito }
       )
     }
-    
-    res.status(200).json({ 
+
+    res.status(200).json({
       success: true,
       mensaje: 'Producto agregado al carrito',
       carrito
     })
   } catch (error) {
     console.error('Error al agregar al carrito:', error)
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       error: 'Error interno del servidor',
-      details: error.message 
+      details: error.message
     })
   }
 })
 
 app.get('/carrito', autenticar, async (req, res) => {
   try {
-    const carrito = await db.collection('carritos').findOne({ 
-      usuarioId: new ObjectId(req.usuario.id) 
+    const carrito = await db.collection('carritos').findOne({
+      usuarioId: new ObjectId(req.usuario.id)
     }, {
       projection: { _id: 0, usuarioId: 0 } // Exclude these fields
     })
-    
+
     if (!carrito) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         success: true,
         items: [],
         message: 'Carrito vacío'
       })
     }
-    
+
     res.status(200).json({
       success: true,
       items: carrito.items,
       lastUpdated: carrito.actualizadoEn
     })
-    
+
   } catch (error) {
     console.error('Error al obtener carrito:', error)
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       error: 'Error al cargar el carrito',
-      details: error.message 
+      details: error.message
     })
   }
 })
@@ -335,35 +335,35 @@ app.put('/carrito/:productoId', autenticar, async (req, res) => {
   try {
     const { cantidad } = req.body
     const productoId = req.params.productoId
-    
+
     if (!cantidad || cantidad < 1) {
       return res.status(400).json({ error: 'Cantidad inválida' })
     }
-    
-    const carrito = await db.collection('carritos').findOne({ 
-      usuarioId: new ObjectId(req.usuario.id) 
+
+    const carrito = await db.collection('carritos').findOne({
+      usuarioId: new ObjectId(req.usuario.id)
     })
-    
+
     if (!carrito) {
       return res.status(404).json({ error: 'Carrito no encontrado' })
     }
-    
+
     const itemIndex = carrito.items.findIndex(
       item => item.producto._id.toString() === productoId
     )
-    
+
     if (itemIndex === -1) {
       return res.status(404).json({ error: 'Producto no encontrado en el carrito' })
     }
-    
+
     carrito.items[itemIndex].cantidad = cantidad
     carrito.actualizadoEn = new Date()
-    
+
     await db.collection('carritos').updateOne(
       { _id: carrito._id },
       { $set: carrito }
     )
-    
+
     res.json({ mensaje: 'Cantidad actualizada' })
   } catch (error) {
     console.error('Error al actualizar carrito:', error)
@@ -375,26 +375,26 @@ app.put('/carrito/:productoId', autenticar, async (req, res) => {
 app.delete('/carrito/:productoId', autenticar, async (req, res) => {
   try {
     const productoId = req.params.productoId
-    
-    const carrito = await db.collection('carritos').findOne({ 
-      usuarioId: new ObjectId(req.usuario.id) 
+
+    const carrito = await db.collection('carritos').findOne({
+      usuarioId: new ObjectId(req.usuario.id)
     })
-    
+
     if (!carrito) {
       return res.status(404).json({ error: 'Carrito no encontrado' })
     }
-    
+
     const itemIndex = carrito.items.findIndex(
       item => item.producto._id.toString() === productoId
     )
-    
+
     if (itemIndex === -1) {
       return res.status(404).json({ error: 'Producto no encontrado en el carrito' })
     }
-    
+
     carrito.items.splice(itemIndex, 1)
     carrito.actualizadoEn = new Date()
-    
+
     if (carrito.items.length === 0) {
       await db.collection('carritos').deleteOne({ _id: carrito._id })
     } else {
@@ -403,7 +403,7 @@ app.delete('/carrito/:productoId', autenticar, async (req, res) => {
         { $set: carrito }
       )
     }
-    
+
     res.json({ mensaje: 'Producto eliminado del carrito' })
   } catch (error) {
     console.error('Error al eliminar del carrito:', error)
@@ -419,9 +419,9 @@ app.get('/api/pago/datos', autenticar, async (req, res) => {
     });
 
     if (!carrito || carrito.items.length === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Carrito vacío o no encontrado' 
+      return res.status(404).json({
+        success: false,
+        error: 'Carrito vacío o no encontrado'
       });
     }
 
@@ -429,7 +429,7 @@ app.get('/api/pago/datos', autenticar, async (req, res) => {
       _id: new ObjectId(req.usuario.id)
     }, { projection: { direccion: 1, nombre: 1, email: 1 } });
 
-    const total = carrito.items.reduce((sum, item) => 
+    const total = carrito.items.reduce((sum, item) =>
       sum + (item.producto.precio * item.cantidad), 0
     );
 
@@ -446,9 +446,9 @@ app.get('/api/pago/datos', autenticar, async (req, res) => {
     });
   } catch (error) {
     console.error('Error al obtener datos de pago:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Error interno del servidor' 
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor'
     });
   }
 });
@@ -460,16 +460,16 @@ app.post('/api/pago/procesar', autenticar, async (req, res) => {
 
     // Validaciones básicas
     if (!carritoId || !datosTarjeta) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Datos de pago incompletos' 
+      return res.status(400).json({
+        success: false,
+        error: 'Datos de pago incompletos'
       });
     }
 
     if (!datosTarjeta.numero || !datosTarjeta.nombre || !datosTarjeta.expiracion || !datosTarjeta.cvv) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Datos de tarjeta incompletos' 
+      return res.status(400).json({
+        success: false,
+        error: 'Datos de tarjeta incompletos'
       });
     }
 
@@ -480,14 +480,14 @@ app.post('/api/pago/procesar', autenticar, async (req, res) => {
     });
 
     if (!carrito || carrito.items.length === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Carrito no encontrado o vacío' 
+      return res.status(404).json({
+        success: false,
+        error: 'Carrito no encontrado o vacío'
       });
     }
 
     // Calcular total
-    const total = carrito.items.reduce((sum, item) => 
+    const total = carrito.items.reduce((sum, item) =>
       sum + (item.producto.precio * item.cantidad), 0
     );
 
@@ -495,8 +495,8 @@ app.post('/api/pago/procesar', autenticar, async (req, res) => {
     const resultadoPago = await procesarPagoTarjeta(datosTarjeta, total);
 
     if (!resultadoPago.exito) {
-      return res.status(400).json({ 
-        success: false, 
+      return res.status(400).json({
+        success: false,
         error: resultadoPago.mensaje || 'Pago rechazado',
         codigo: resultadoPago.codigo
       });
@@ -518,11 +518,11 @@ app.post('/api/pago/procesar', autenticar, async (req, res) => {
     const resultadoOrden = await db.collection('ordenes').insertOne(orden);
 
     // Limpiar carrito después del pago exitoso
-    await db.collection('carritos').deleteOne({ 
-      _id: new ObjectId(carritoId) 
+    await db.collection('carritos').deleteOne({
+      _id: new ObjectId(carritoId)
     });
 
-    res.json({ 
+    res.json({
       success: true,
       ordenId: resultadoOrden.insertedId.toString(),
       referencia: resultadoPago.referencia,
@@ -532,9 +532,9 @@ app.post('/api/pago/procesar', autenticar, async (req, res) => {
 
   } catch (error) {
     console.error('Error al procesar pago:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Error interno del servidor al procesar el pago' 
+    res.status(500).json({
+      success: false,
+      error: 'Error interno del servidor al procesar el pago'
     });
   }
 });
@@ -545,7 +545,7 @@ async function procesarPagoTarjeta(datosTarjeta, monto) {
     setTimeout(() => {
       // Simulación más realista
       const numeroTarjeta = datosTarjeta.numero.replace(/\s/g, '');
-      
+
       // Validaciones básicas de tarjeta
       if (numeroTarjeta.length < 13 || numeroTarjeta.length > 19) {
         resolve({
@@ -567,7 +567,7 @@ async function procesarPagoTarjeta(datosTarjeta, monto) {
 
       // Simular diferentes tipos de respuesta
       const random = Math.random();
-      
+
       if (random > 0.85) { // 15% falla
         const errores = [
           { mensaje: 'Fondos insuficientes', codigo: 'INSUFFICIENT_FUNDS' },
@@ -575,7 +575,7 @@ async function procesarPagoTarjeta(datosTarjeta, monto) {
           { mensaje: 'Tarjeta cancelada', codigo: 'CANCELLED_CARD' }
         ];
         const error = errores[Math.floor(Math.random() * errores.length)];
-        
+
         resolve({
           exito: false,
           mensaje: error.mensaje,
@@ -602,34 +602,34 @@ app.get('/api/orden/:ordenId', autenticar, async (req, res) => {
     });
 
     if (!orden) {
-      return res.status(404).json({ 
-        success: false, 
-        error: 'Orden no encontrada' 
+      return res.status(404).json({
+        success: false,
+        error: 'Orden no encontrada'
       });
     }
 
     res.json({ success: true, orden });
   } catch (error) {
     console.error('Error al obtener orden:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Error al obtener detalles de la orden' 
+    res.status(500).json({
+      success: false,
+      error: 'Error al obtener detalles de la orden'
     });
   }
 });
 
 // Manejo de errores
 app.use((req, res) => {
-    res.status(404).json({ mensaje: "Ruta no encontrada" })
+  res.status(404).json({ mensaje: "Ruta no encontrada" })
 })
 
 // Cierre adecuado al terminar
 process.on('SIGINT', async () => {
-    await cliente.close()
-    process.exit()
+  await cliente.close()
+  process.exit()
 })
 
 // Iniciar servidor
 app.listen(3000, () => {
-    console.log("Servidor corriendo en http://localhost:3000")
+  console.log("Servidor corriendo en http://localhost:3000")
 }) 
