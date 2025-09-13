@@ -109,7 +109,7 @@ async function startServer() {
     const db = getDB();
 
     // Configurar rutas de la API DESPUÉS de conectar a la base de datos
-    app.use('/api/categorias', CategoriaRoutes(db));
+    app.use(CategoriaRoutes(db));
 
     // Middleware para rutas no encontradas (debe ir después de todas las rutas)
     app.use(notFoundHandler);
