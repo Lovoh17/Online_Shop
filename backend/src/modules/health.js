@@ -1,4 +1,5 @@
-// routes/health.js
+import {  getDB } from "../config/database.js";
+
 export const setupHealthChecks = (app) => {
     // Ruta principal con health check mejorado
     app.get("/", async (req, res) => {

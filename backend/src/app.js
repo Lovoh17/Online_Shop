@@ -3,14 +3,14 @@ import dotenv from "dotenv";
 import { connectDB, getDB } from "./config/database.js";
 import corsMiddleware from "./config/cors.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
-import { CategoriaRoutes } from "./modules/index.js";
+import { CategoriaRoutes, setupHealthChecks } from "./modules/index.js";
 
 dotenv.config();
 const app = express();
 
 // Middlewares globales de seguridad y parsing
 app.use(corsMiddleware);
-app.use(express.json({ limit: '1mb' })); 
+app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use("/uploads", express.static("uploads"));
 
@@ -22,85 +22,8 @@ if (process.env.NODE_ENV === 'development') {
   });
 }
 
-// Ruta principal con health check mejorado
-app.get("/", async (req, res) => {
-  try {
-    const db = getDB();
-    await db.admin().ping();
-
-    res.json({
-      success: true,
-      message: "API funcionando correctamente",
-      version: "1.0.0",
-      timestamp: new Date().toISOString(),
-      status: "healthy",
-      database: "connected",
-      endpoints: {
-        categorias: '/api/categorias',
-        // productos: '/api/productos',
-        // carrito: '/api/carrito',
-        // pedidos: '/api/pedidos',
-        // usuarios: '/api/usuarios',
-        health: '/api/health'
-      }
-    });
-  } catch (error) {
-    res.status(503).json({
-      success: false,
-      message: "Servicio no disponible",
-      status: "unhealthy",
-      database: "disconnected",
-      timestamp: new Date().toISOString()
-    });
-  }
-});
-
-// Ruta específica de health check
-app.get("/api/health", async (req, res) => {
-  try {
-    const db = getDB();
-    const startTime = Date.now();
-    await db.admin().ping();
-    const responseTime = Date.now() - startTime;
-
-    // Obtener estadísticas de conexión si está disponible
-    let dbStats = null;
-    try {
-      const stats = await db.admin().serverStatus();
-      dbStats = {
-        connections: stats.connections,
-        uptime: stats.uptime,
-        version: stats.version
-      };
-    } catch (statsError) {
-      dbStats = { error: "No se pudieron obtener estadísticas" };
-    }
-
-    res.json({
-      success: true,
-      status: "healthy",
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      memory: process.memoryUsage(),
-      database: {
-        status: "connected",
-        responseTime: `${responseTime}ms`,
-        stats: dbStats
-      },
-      environment: process.env.NODE_ENV || 'development'
-    });
-  } catch (error) {
-    res.status(503).json({
-      success: false,
-      status: "unhealthy",
-      timestamp: new Date().toISOString(),
-      database: {
-        status: "disconnected",
-        error: error.message
-      }
-    });
-  }
-});
+// Configurar rutas de health check
+setupHealthChecks(app);
 
 // Iniciar servidor
 async function startServer() {
@@ -108,13 +31,13 @@ async function startServer() {
     await connectDB();
     const db = getDB();
 
-    // Configurar rutas de la API DESPUÉS de conectar a la base de datos
+    // Configurar rutas de la API 
     app.use(CategoriaRoutes(db));
 
-    // Middleware para rutas no encontradas (debe ir después de todas las rutas)
+    // Middleware para rutas no encontradas 
     app.use(notFoundHandler);
 
-    // Middleware global de manejo de errores (debe ir al final)
+    // Middleware global de manejo de errores 
     app.use(errorHandler);
 
     const PORT = process.env.PORT || 4000;
