@@ -1,7 +1,6 @@
 // middleware/errorHandler.js
 import { ObjectId } from 'mongodb';
 
-// Clase para errores personalizados
 export class AppError extends Error {
     constructor(message, statusCode, errorCode = null) {
         super(message);
@@ -14,7 +13,6 @@ export class AppError extends Error {
     }
 }
 
-// Errores específicos de validación
 export class ValidationError extends AppError {
     constructor(message, errors = []) {
         super(message, 400, 'VALIDATION_ERROR');
@@ -22,21 +20,18 @@ export class ValidationError extends AppError {
     }
 }
 
-// Error de recurso no encontrado
 export class NotFoundError extends AppError {
     constructor(resource = 'Recurso') {
         super(`${resource} no encontrado`, 404, 'NOT_FOUND');
     }
 }
 
-// Error de conflicto (duplicados, etc.)
 export class ConflictError extends AppError {
     constructor(message) {
         super(message, 409, 'CONFLICT');
     }
 }
 
-// Error de base de datos
 export class DatabaseError extends AppError {
     constructor(message, originalError = null) {
         super(message, 500, 'DATABASE_ERROR');
@@ -44,7 +39,6 @@ export class DatabaseError extends AppError {
     }
 }
 
-// Función para identificar tipos de errores MongoDB
 const handleMongoError = (err) => {
     if (err.code === 11000) {
         // Error de clave duplicada
@@ -65,7 +59,6 @@ const handleMongoError = (err) => {
     return new DatabaseError('Error en la base de datos', err);
 };
 
-// Función para enviar errores en desarrollo
 const sendErrorDev = (err, res) => {
     res.status(err.statusCode).json({
         success: false,
@@ -80,9 +73,7 @@ const sendErrorDev = (err, res) => {
     });
 };
 
-// Función para enviar errores en producción
 const sendErrorProd = (err, res) => {
-    // Errores operacionales: enviar mensaje al cliente
     if (err.isOperational) {
         const response = {
             success: false,
@@ -93,7 +84,6 @@ const sendErrorProd = (err, res) => {
 
         res.status(err.statusCode).json(response);
     } else {
-        // Errores de programación: no filtrar detalles al cliente
         console.error('ERROR 💥', err);
 
         res.status(500).json({
@@ -104,12 +94,10 @@ const sendErrorProd = (err, res) => {
     }
 };
 
-// Middleware principal de manejo de errores
 export const errorHandler = (err, req, res, next) => {
     err.statusCode = err.statusCode || 500;
     err.status = err.status || 'error';
 
-    // Log del error
     console.error(`[${new Date().toISOString()}] ${req.method} ${req.path} - ${err.message}`);
 
     if (process.env.NODE_ENV === 'development') {
@@ -119,22 +107,18 @@ export const errorHandler = (err, req, res, next) => {
     let error = { ...err };
     error.message = err.message;
 
-    // Manejar diferentes tipos de errores
     if (err.name === 'CastError' || err.code === 11000 || err.name === 'ValidationError') {
         error = handleMongoError(err);
     }
 
-    // Manejar errores de ObjectId inválido
     if (err.message?.includes('Invalid ObjectId')) {
         error = new ValidationError('ID de recurso inválido');
     }
 
-    // Manejar errores de conexión a base de datos
     if (err.name === 'MongoNetworkError' || err.name === 'MongoServerError') {
         error = new DatabaseError('Error de conexión con la base de datos');
     }
 
-    // Enviar respuesta según el entorno
     if (process.env.NODE_ENV === 'development') {
         sendErrorDev(error, res);
     } else {

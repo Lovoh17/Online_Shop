@@ -15,11 +15,9 @@ class CategoriaController {
         this.categoriaModel = categoriaModel;
     }
 
-    // GET /api/categorias
     getAll = asyncHandler(async (req, res) => {
         const { activo, page = 1, limit = 10, sort = 'orden' } = req.query;
         
-        // Validar parámetros de paginación
         const pageNum = parseInt(page);
         const limitNum = parseInt(limit);
         
@@ -40,7 +38,6 @@ class CategoriaController {
             filters.activo = activo === 'true';
         }
 
-        // Obtener categorías con paginación
         const skip = (pageNum - 1) * limitNum;
         const categorias = await this.categoriaModel.findAll(filters, {
             skip,
@@ -63,7 +60,6 @@ class CategoriaController {
         });
     });
 
-    // GET /api/categorias/:id
     getById = asyncHandler(async (req, res) => {
         const { id } = req.params;
         
@@ -82,7 +78,6 @@ class CategoriaController {
         });
     });
 
-    // GET /api/categorias/slug/:slug
     getBySlug = asyncHandler(async (req, res) => {
         const { slug } = req.params;
         
@@ -107,7 +102,6 @@ class CategoriaController {
         });
     });
 
-    // POST /api/categorias
     create = asyncHandler(async (req, res) => {
         // Validar que el body no esté vacío
         if (!req.body || Object.keys(req.body).length === 0) {
@@ -123,19 +117,16 @@ class CategoriaController {
         });
     });
 
-    // PUT /api/categorias/:id
     update = asyncHandler(async (req, res) => {
         const { id } = req.params;
         
         // Validar ObjectId
         validateObjectId(id, 'ID de categoría');
         
-        // Validar que el body no esté vacío
         if (!req.body || Object.keys(req.body).length === 0) {
             throw createValidationError('Los datos para actualizar son requeridos');
         }
 
-        // Verificar que la categoría existe antes de actualizar
         const existingCategoria = await this.categoriaModel.findById(id);
         if (!existingCategoria) {
             throw createNotFoundError('Categoría');
@@ -150,11 +141,9 @@ class CategoriaController {
         });
     });
 
-    // DELETE /api/categorias/:id (soft delete)
     delete = asyncHandler(async (req, res) => {
         const { id } = req.params;
         
-        // Validar ObjectId
         validateObjectId(id, 'ID de categoría');
 
         const deleted = await this.categoriaModel.deleteById(id);
@@ -169,7 +158,6 @@ class CategoriaController {
         });
     });
 
-    // GET /api/categorias/:id/exists (verificar si existe un slug)
     checkSlugExists = asyncHandler(async (req, res) => {
         const { slug } = req.query;
         const { id } = req.params;
@@ -178,12 +166,10 @@ class CategoriaController {
             throw createValidationError('El parámetro slug es requerido');
         }
 
-        // Validar formato del slug
         if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
             throw createValidationError('Formato de slug inválido');
         }
 
-        // Validar ID si se proporciona (y no es "undefined")
         let excludeId = null;
         if (id && id !== 'undefined' && id !== '') {
             validateObjectId(id, 'ID de categoría a excluir');
@@ -203,7 +189,6 @@ class CategoriaController {
         });
     });
 
-    // Método adicional para obtener estadísticas de categorías
     getStats = asyncHandler(async (req, res) => {
         const [total, activas, inactivas] = await Promise.all([
             this.categoriaModel.count(),
@@ -222,7 +207,6 @@ class CategoriaController {
         });
     });
 
-    // Método para búsqueda de categorías
     search = asyncHandler(async (req, res) => {
         const { q, limit = 10 } = req.query;
         

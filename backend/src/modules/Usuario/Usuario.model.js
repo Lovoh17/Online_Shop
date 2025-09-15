@@ -28,7 +28,6 @@ export const usuarioSchema = {
     }
 };
 
-// Función de validación
 export const validarUsuario = (usuario) => {
     const errors = [];
     

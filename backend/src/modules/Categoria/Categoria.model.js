@@ -7,7 +7,6 @@ export class CategoriaModel {
         this.collection = db.collection("categorias");
     }
 
-    // Crear índices para mejorar el rendimiento
     async createIndexes() {
         try {
             await this.collection.createIndex({ slug: 1 }, { unique: true });
@@ -18,13 +17,11 @@ export class CategoriaModel {
         }
     }
 
-    // Crear nueva categoría (solo operación de base de datos)
     async create(data) {
         const result = await this.collection.insertOne(data);
         return await this.findById(result.insertedId);
     }
 
-    // Buscar por ID
     async findById(id) {
         try {
             const objectId = typeof id === 'string' ? new ObjectId(id) : id;
@@ -34,7 +31,6 @@ export class CategoriaModel {
         }
     }
 
-    // Buscar por slug
     async findBySlug(slug) {
         return await this.collection.findOne({
             slug: slug.toLowerCase(),
@@ -42,7 +38,6 @@ export class CategoriaModel {
         });
     }
 
-    // Obtener todas las categorías
     async findAll(filters = {}) {
         const query = { ...filters };
 
@@ -52,12 +47,10 @@ export class CategoriaModel {
             .toArray();
     }
 
-    // Obtener categorías activas
     async findActive() {
         return await this.findAll({ activo: true });
     }
 
-    // Actualizar categoría (solo operación de base de datos)
     async updateById(id, data) {
         const objectId = typeof id === 'string' ? new ObjectId(id) : id;
 
@@ -73,7 +66,6 @@ export class CategoriaModel {
         return await this.findById(objectId);
     }
 
-    // Eliminar categoría (soft delete)
     async deleteById(id) {
         const objectId = typeof id === 'string' ? new ObjectId(id) : id;
 
@@ -90,19 +82,16 @@ export class CategoriaModel {
         return result.matchedCount > 0;
     }
 
-    // Eliminar permanentemente
     async hardDeleteById(id) {
         const objectId = typeof id === 'string' ? new ObjectId(id) : id;
         const result = await this.collection.deleteOne({ _id: objectId });
         return result.deletedCount > 0;
     }
 
-    // Contar documentos
     async count(filters = {}) {
         return await this.collection.countDocuments(filters);
     }
 
-    // Verificar si existe slug
     async existsSlug(slug, excludeId = null) {
         const query = { slug: slug.toLowerCase() };
 

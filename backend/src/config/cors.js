@@ -10,6 +10,5 @@ const corsOptions = {
 // Middleware de CORS configurado
 const corsMiddleware = cors(corsOptions);
 
-// También exportamos las opciones por si se necesitan en otro lugar
 export { corsOptions };
 export default corsMiddleware;

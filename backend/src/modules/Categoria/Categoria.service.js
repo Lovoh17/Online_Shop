@@ -29,7 +29,6 @@ export class CategoriaService {
         return errors;
     }
 
-    // Generar slug automáticamente
     generateSlug(nombre) {
         return nombre
             .toLowerCase()
@@ -40,7 +39,6 @@ export class CategoriaService {
             .replace(/\s+/g, '-');
     }
 
-    // Preparar datos antes de guardar
     prepareData(data) {
         const now = new Date();
 
@@ -61,7 +59,6 @@ export class CategoriaService {
         return preparedData;
     }
 
-    // Crear nueva categoría
     async create(data) {
         const errors = this.validateData(data);
         if (errors.length > 0) {
@@ -79,8 +76,6 @@ export class CategoriaService {
             throw error;
         }
     }
-
-    // Actualizar categoría
     async updateById(id, data) {
         const errors = this.validateData(data);
         if (errors.length > 0) {
@@ -100,12 +95,10 @@ export class CategoriaService {
         }
     }
 
-    // Obtener URL amigable
     getUrl(categoria) {
         return `/categorias/${categoria.slug}`;
     }
 
-    // Transformar para respuesta JSON
     toJSON(categoria) {
         if (!categoria) return null;
 
@@ -123,7 +116,6 @@ export class CategoriaService {
         };
     }
 
-    // Verificar si existe slug
     async existsSlug(slug, excludeId = null) {
         return await this.categoriaModel.existsSlug(slug, excludeId);
     }

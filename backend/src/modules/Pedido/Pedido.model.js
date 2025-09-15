@@ -1,4 +1,3 @@
-// Esquema de validación para pedidos
 export const pedidoSchema = {
     usuarioId: {
         type: String,
@@ -41,7 +40,6 @@ export const pedidoSchema = {
     }
 };
 
-// Estados de pedido permitidos
 export const estadosPedido = [
     'pendiente',
     'confirmado',
@@ -49,8 +47,6 @@ export const estadosPedido = [
     'entregado',
     'cancelado'
 ];
-
-// Función de validación
 export const validarPedido = (pedido) => {
     const errors = [];
 
@@ -73,7 +69,6 @@ export const validarPedido = (pedido) => {
     return errors;
 };
 
-// Dirección de envío schema
 export const direccionEnvioSchema = {
     calle: { type: String, required: true },
     numeroExterior: { type: String, required: true },

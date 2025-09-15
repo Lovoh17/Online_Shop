@@ -1,4 +1,3 @@
-// Esquema de validación para productos
 export const productoSchema = {
     nombre: {
         type: String,
@@ -45,7 +44,6 @@ export const productoSchema = {
     }
 };
 
-// Función de validación
 export const validarProducto = (producto) => {
     const errors = [];
 
@@ -68,7 +66,6 @@ export const validarProducto = (producto) => {
     return errors;
 };
 
-// Categorías predefinidas (opcional)
 export const categoriasPermitidas = [
     'electronica',
     'ropa',

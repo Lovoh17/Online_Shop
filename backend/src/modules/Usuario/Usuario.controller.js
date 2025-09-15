@@ -7,7 +7,7 @@ class UsuarioController {
         this.db = db;
     }
 
-    // Registro de usuario
+
     async registrar(req, res) {
         try {
             const { nombre, email, password } = req.body;
@@ -19,7 +19,6 @@ class UsuarioController {
                 });
             }
 
-            // Verificar si el usuario ya existe
             const existente = await this.db.collection("usuarios").findOne({ email });
             if (existente) {
                 return res.status(400).json({ 
@@ -28,10 +27,8 @@ class UsuarioController {
                 });
             }
 
-            // Hash de la contraseña
             const hashedPassword = await bcrypt.hash(password, 10);
-            
-            // Crear usuario
+
             const result = await this.db.collection("usuarios").insertOne({ 
                 nombre, 
                 email, 
@@ -56,7 +53,6 @@ class UsuarioController {
         }
     }
 
-    // Login de usuario
     async login(req, res) {
         try {
             const { email, password } = req.body;
@@ -68,7 +64,6 @@ class UsuarioController {
                 });
             }
 
-            // Buscar usuario
             const usuario = await this.db.collection("usuarios").findOne({ email });
             if (!usuario) {
                 return res.status(400).json({ 
@@ -77,7 +72,6 @@ class UsuarioController {
                 });
             }
 
-            // Verificar contraseña
             const passwordMatch = await bcrypt.compare(password, usuario.password);
             if (!passwordMatch) {
                 return res.status(400).json({ 
@@ -86,7 +80,6 @@ class UsuarioController {
                 });
             }
 
-            // Generar token JWT
             const token = jwt.sign(
                 { 
                     id: usuario._id.toString(),
@@ -97,7 +90,6 @@ class UsuarioController {
                 { expiresIn: '24h' }
             );
 
-            // No devolver la contraseña en la respuesta
             const { password: _, ...userWithoutPassword } = usuario;
 
             res.json({ 
@@ -115,21 +107,11 @@ class UsuarioController {
         }
     }
 
-    // Obtener TODOS los usuarios (solo para administradores o usuarios autenticados)
     async obtenerTodosUsuarios(req, res) {
         try {
-            // Opcional: verificar si el usuario tiene permisos de administrador
-            // if (req.usuario.rol !== 'admin') {
-            //     return res.status(403).json({ 
-            //         success: false,
-            //         message: 'No tienes permisos para ver todos los usuarios' 
-            //     });
-            // }
-
             const { pagina = 1, limite = 10, buscar = '' } = req.query;
             const skip = (pagina - 1) * limite;
 
-            // Construir filtro de búsqueda
             let filtro = {};
             if (buscar) {
                 filtro = {
@@ -140,14 +122,12 @@ class UsuarioController {
                 };
             }
 
-            // Obtener usuarios con paginación
             const usuarios = await this.db.collection("usuarios")
-                .find(filtro, { projection: { password: 0 } }) // Excluir passwords
+                .find(filtro, { projection: { password: 0 } })
                 .skip(skip)
                 .limit(parseInt(limite))
                 .toArray();
 
-            // Obtener total de usuarios para paginación
             const totalUsuarios = await this.db.collection("usuarios").countDocuments(filtro);
             const totalPaginas = Math.ceil(totalUsuarios / limite);
 
@@ -170,7 +150,6 @@ class UsuarioController {
         }
     }
 
-    // Buscar usuarios por nombre
     async buscarUsuariosPorNombre(req, res) {
         try {
             const { nombre } = req.params;
@@ -208,8 +187,6 @@ class UsuarioController {
             });
         }
     }
-
-    // Obtener perfil del usuario autenticado
     async obtenerPerfil(req, res) {
         try {
             const usuario = await this.db.collection("usuarios").findOne({ 
@@ -222,8 +199,6 @@ class UsuarioController {
                     message: 'Usuario no encontrado' 
                 });
             }
-            
-            // No devolver la contraseña
             const { password, ...userData } = usuario;
             
             res.json({ 
@@ -239,7 +214,6 @@ class UsuarioController {
         }
     }
 
-    // Actualizar perfil del usuario
     async actualizarPerfil(req, res) {
         try {
             const { nombre, direccion, telefono } = req.body;
@@ -278,12 +252,10 @@ class UsuarioController {
         }
     }
 
-    // Obtener usuario por ID
     async obtenerUsuarioPorId(req, res) {
         try {
             const usuarioId = req.params.id;
             
-            // Validar ObjectId
             if (!ObjectId.isValid(usuarioId)) {
                 return res.status(400).json({ 
                     success: false,
@@ -294,7 +266,7 @@ class UsuarioController {
             const usuario = await this.db.collection("usuarios").findOne({ 
                 _id: new ObjectId(usuarioId) 
             }, {
-                projection: { password: 0 } // Excluir password
+                projection: { password: 0 } 
             });
             
             if (!usuario) {

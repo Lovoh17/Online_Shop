@@ -14,7 +14,6 @@ class PedidoService {
         try {
             session.startTransaction();
 
-            // Verificar y procesar cada item del pedido
             let total = 0;
             const itemsProcesados = [];
 
@@ -32,7 +31,6 @@ class PedidoService {
                     throw new Error(`Stock insuficiente para ${producto.nombre}`);
                 }
 
-                // Calcular subtotal
                 const subtotal = producto.precio * item.cantidad;
                 total += subtotal;
 
@@ -47,7 +45,6 @@ class PedidoService {
                     subtotal
                 });
 
-                // Actualizar stock
                 await this.productosCollection.updateOne(
                     { _id: producto._id },
                     { $inc: { stock: -item.cantidad } },
@@ -55,13 +52,12 @@ class PedidoService {
                 );
             }
 
-            // Crear el pedido
             const pedido = {
                 usuarioId: new ObjectId(pedidoData.usuarioId),
                 items: itemsProcesados,
                 total,
                 subtotal: total,
-                impuestos: total * 0.16, // 16% de impuestos
+                impuestos: total * 0.16,
                 totalFinal: total * 1.16,
                 direccionEnvio: pedidoData.direccionEnvio,
                 metodoPago: pedidoData.metodoPago,
@@ -79,7 +75,6 @@ class PedidoService {
 
             const result = await this.collection.insertOne(pedido, { session });
 
-            // Limpiar carrito del usuario
             await this.carritosCollection.deleteOne(
                 { usuarioId: new ObjectId(pedidoData.usuarioId) },
                 { session }
@@ -100,7 +95,6 @@ class PedidoService {
     async obtenerPedidos({ pagina = 1, limite = 10, filtros = {} }) {
         const skip = (pagina - 1) * limite;
 
-        // Convertir usuarioId a ObjectId si existe
         if (filtros.usuarioId) {
             filtros.usuarioId = new ObjectId(filtros.usuarioId);
         }
@@ -171,7 +165,6 @@ class PedidoService {
         return `PED-${año}-${siguienteNumero.toString().padStart(6, '0')}`;
     }
 
-    // Métodos adicionales
     async obtenerEstadisticas(usuarioId = null) {
         const filtros = usuarioId ? { usuarioId: new ObjectId(usuarioId) } : {};
 
@@ -207,7 +200,6 @@ class PedidoService {
             throw new Error('No se puede cancelar un pedido ya entregado');
         }
 
-        // Devolver stock si el pedido estaba confirmado
         if (pedido.estado === 'confirmado') {
             for (const item of pedido.items) {
                 await this.productosCollection.updateOne(

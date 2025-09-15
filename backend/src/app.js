@@ -38,10 +38,8 @@ async function startServer() {
     app.use(ProductosRoutes(db));
     app.use(PedidoRoutes(db));
 
-    // Middleware para rutas no encontradas 
     app.use(notFoundHandler);
 
-    // Middleware global de manejo de errores 
     app.use(errorHandler);
 
     const PORT = process.env.PORT || 4000;
@@ -59,7 +57,6 @@ async function startServer() {
   }
 }
 
-// Manejo de errores no capturados
 process.on('uncaughtException', (err) => {
   console.error('💥 UNCAUGHT EXCEPTION! Shutting down...');
   console.error(err.name, err.message);
@@ -72,7 +69,6 @@ process.on('unhandledRejection', (err) => {
   process.exit(1);
 });
 
-// Manejo graceful shutdown
 process.on('SIGTERM', () => {
   console.log('👋 SIGTERM RECEIVED. Shutting down gracefully');
   process.exit(0);

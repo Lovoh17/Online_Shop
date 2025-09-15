@@ -3,11 +3,9 @@ import { ObjectId } from "mongodb";
 
 function autenticar(req, res, next) {
   try {
-    // Obtener el token del header Authorization
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Formato: Bearer TOKEN
+    const token = authHeader && authHeader.split(' ')[1]; 
     
-    // Verificar si existe token
     if (!token) {
       console.log('❌ No se proporcionó token de autenticación');
       return res.status(401).json({ 
@@ -17,7 +15,6 @@ function autenticar(req, res, next) {
       });
     }
 
-    // Verificar y decodificar el token
     jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
       if (err) {
         console.error('❌ Error verificando token:', err.message);
@@ -39,8 +36,6 @@ function autenticar(req, res, next) {
           code: "INVALID_TOKEN"
         });
       }
-      
-      // Verificar que el token tenga la estructura esperada
       if (!decoded.id || !decoded.email) {
         console.error('❌ Token con estructura inválida:', decoded);
         return res.status(401).json({ 
@@ -50,7 +45,7 @@ function autenticar(req, res, next) {
         });
       }
       
-      // Validar que el ID sea un ObjectId válido
+
       if (!ObjectId.isValid(decoded.id)) {
         console.error('❌ ID de usuario inválido en token:', decoded.id);
         return res.status(401).json({ 
@@ -60,7 +55,6 @@ function autenticar(req, res, next) {
         });
       }
       
-      // Agregar información del usuario al request
       req.usuario = {
         id: decoded.id,
         email: decoded.email,
@@ -81,7 +75,6 @@ function autenticar(req, res, next) {
   }
 }
 
-// Middleware opcional para verificar roles de usuario
 function requerirRol(rolesPermitidos = []) {
   return (req, res, next) => {
     if (!req.usuario) {
@@ -91,21 +84,17 @@ function requerirRol(rolesPermitidos = []) {
         code: "AUTH_REQUIRED"
       });
     }
-    
-    // Aquí puedes agregar lógica de roles si tu aplicación los usa
-    // Por ahora, este es un placeholder para futura implementación
+    //implemear la logica de roles
     next();
   };
 }
 
-// Función para generar tokens (útil para testing o otros módulos)
 function generarToken(payload) {
   return jwt.sign(payload, process.env.JWT_SECRET, { 
     expiresIn: process.env.JWT_EXPIRES_IN || '24h' 
   });
 }
 
-// Función para verificar token sin middleware (útil para sockets, etc.)
 function verificarToken(token) {
   return new Promise((resolve, reject) => {
     jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {

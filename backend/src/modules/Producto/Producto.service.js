@@ -9,13 +9,11 @@ class ProductoService {
     async obtenerProductos({ pagina = 1, limite = 12, categoria, ordenar = 'nombre', orden = 'asc' }) {
         const skip = (pagina - 1) * limite;
         
-        // Construir filtro
         let filtro = {};
         if (categoria) {
             filtro.categoria = categoria;
         }
 
-        // Construir ordenamiento
         const sortOptions = {};
         sortOptions[ordenar] = orden === 'desc' ? -1 : 1;
 
@@ -126,7 +124,6 @@ class ProductoService {
             updatedAt: new Date()
         };
 
-        // Convertir tipos si es necesario
         if (updateData.precio) updateObj.precio = parseFloat(updateData.precio);
         if (updateData.stock) updateObj.stock = parseInt(updateData.stock);
 
@@ -146,7 +143,6 @@ class ProductoService {
         return result.deletedCount > 0;
     }
 
-    // Métodos adicionales útiles
     async obtenerCategorias() {
         return await this.collection.distinct('categoria');
     }

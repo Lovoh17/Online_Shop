@@ -6,13 +6,12 @@ class PedidoController {
         this.service = new PedidoService(db);
     }
 
-    // Crear un nuevo pedido
+
     async crearPedido(req, res) {
         try {
             const usuarioId = req.usuario.id;
             const { items, direccionEnvio, metodoPago, datosEnvio } = req.body;
 
-            // Validaciones básicas
             if (!items || !Array.isArray(items) || items.length === 0) {
                 return res.status(400).json({
                     success: false,
@@ -61,7 +60,6 @@ class PedidoController {
         }
     }
 
-    // Obtener todos los pedidos (con filtros)
     async obtenerPedidos(req, res) {
         try {
             const { pagina = 1, limite = 10, estado, usuarioId } = req.query;
@@ -91,7 +89,6 @@ class PedidoController {
         }
     }
 
-    // Obtener pedido por ID
     async obtenerPedidoPorId(req, res) {
         try {
             const { id } = req.params;
@@ -105,7 +102,6 @@ class PedidoController {
 
             const pedido = await this.service.obtenerPedidoPorId(id);
 
-            // Verificar que el usuario tenga permisos para ver este pedido
             if (!req.usuario.esAdmin && pedido.usuarioId.toString() !== req.usuario.id) {
                 return res.status(403).json({
                     success: false,
@@ -134,13 +130,11 @@ class PedidoController {
         }
     }
 
-    // Obtener pedidos por usuario
     async obtenerPedidosPorUsuario(req, res) {
         try {
             const { usuarioId } = req.params;
             const { pagina = 1, limite = 10, estado } = req.query;
 
-            // Verificar permisos
             if (!req.usuario.esAdmin && usuarioId !== req.usuario.id) {
                 return res.status(403).json({
                     success: false,
@@ -173,7 +167,6 @@ class PedidoController {
         }
     }
 
-    // Obtener pedidos por estado
     async obtenerPedidosPorEstado(req, res) {
         try {
             const { estado } = req.params;
@@ -189,7 +182,6 @@ class PedidoController {
 
             const filtros = { estado };
 
-            // Si es usuario normal, solo puede ver sus pedidos
             if (!req.usuario.esAdmin) {
                 filtros.usuarioId = req.usuario.id;
             }
@@ -216,7 +208,6 @@ class PedidoController {
         }
     }
 
-    // Actualizar estado del pedido
     async actualizarEstado(req, res) {
         try {
             const { id } = req.params;
@@ -237,7 +228,6 @@ class PedidoController {
                 });
             }
 
-            // Verificar permisos (solo admin puede actualizar estados)
             if (!req.usuario.esAdmin) {
                 return res.status(403).json({
                     success: false,

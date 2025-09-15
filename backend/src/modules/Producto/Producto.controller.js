@@ -6,7 +6,6 @@ class ProductoController {
         this.service = new ProductoService(db);
     }
 
-    // Obtener todos los productos
     async obtenerProductos(req, res) {
         try {
             const { pagina = 1, limite = 12, categoria, ordenar = 'nombre', orden = 'asc' } = req.query;
@@ -34,7 +33,6 @@ class ProductoController {
         }
     }
 
-    // Obtener producto por ID
     async obtenerProductoPorId(req, res) {
         try {
             const { id } = req.params;
@@ -69,7 +67,6 @@ class ProductoController {
         }
     }
 
-    // Obtener productos por categoría
     async obtenerProductosPorCategoria(req, res) {
         try {
             const { categoria } = req.params;
@@ -97,7 +94,6 @@ class ProductoController {
         }
     }
 
-    // Buscar productos
     async buscarProductos(req, res) {
         try {
             const { nombre } = req.params;
@@ -132,12 +128,10 @@ class ProductoController {
         }
     }
 
-    // Crear producto (solo administradores)
     async crearProducto(req, res) {
         try {
             const productoData = req.body;
             
-            // Validaciones básicas
             if (!productoData.nombre || !productoData.precio || !productoData.categoria) {
                 return res.status(400).json({
                     success: false,
@@ -169,7 +163,6 @@ class ProductoController {
         }
     }
 
-    // Actualizar producto (solo administradores)
     async actualizarProducto(req, res) {
         try {
             const { id } = req.params;
@@ -213,7 +206,6 @@ class ProductoController {
         }
     }
 
-    // Eliminar producto (solo administradores)
     async eliminarProducto(req, res) {
         try {
             const { id } = req.params;

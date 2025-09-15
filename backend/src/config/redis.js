@@ -157,7 +157,6 @@ class RedisService {
     }
 }
 
-// Singleton instance
 const redisService = new RedisService();
 
 export default redisService;
