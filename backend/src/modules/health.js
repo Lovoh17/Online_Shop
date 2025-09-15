@@ -17,6 +17,9 @@ export const setupHealthChecks = (app) => {
                 endpoints: {
                     categorias: '/api/categorias',
                     carrito: '/api/carrito',
+                    usuario:  '/api/usuarios',
+                    productos: '/api/productos',
+                    pedido: '/api/pedido',
                     health: '/api/health'
                 }
             });
