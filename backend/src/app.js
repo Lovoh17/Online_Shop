@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import { connectDB, getDB } from "./config/database.js";
 import corsMiddleware from "./config/cors.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
-import { CategoriaRoutes, setupHealthChecks } from "./modules/index.js";
+import { CarritoRoutes, CategoriaRoutes, setupHealthChecks } from "./modules/index.js";
 
 dotenv.config();
 const app = express();
@@ -33,6 +33,7 @@ async function startServer() {
 
     // Configurar rutas de la API 
     app.use(CategoriaRoutes(db));
+    app.use(CarritoRoutes(db));
 
     // Middleware para rutas no encontradas 
     app.use(notFoundHandler);

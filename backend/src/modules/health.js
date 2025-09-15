@@ -16,6 +16,7 @@ export const setupHealthChecks = (app) => {
                 database: "connected",
                 endpoints: {
                     categorias: '/api/categorias',
+                    carrito: '/api/carrito',
                     health: '/api/health'
                 }
             });
