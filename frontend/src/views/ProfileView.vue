@@ -1,89 +1,205 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 
-const authStore = useAuthStore()
 const router = useRouter()
 const loading = ref(false)
 const error = ref(null)
 const editMode = ref(false)
+const userData = ref(null)
 const editForm = ref({
   nombre: '',
   telefono: '',
-  direccion: {
-    calle: '',
-    ciudad: '',
-    pais: '',
-    codigoPostal: ''
+  direccion: ''  // Simplificado para coincidir con tu backend
+})
+
+// Obtener token del localStorage
+const getToken = () => {
+  return localStorage.getItem('token')
+}
+
+// Verificar si el usuario está autenticado
+const isAuthenticated = computed(() => {
+  return !!getToken()
+})
+
+// Formatear dirección de JSON a texto legible
+const formatearDireccion = (direccion) => {
+  if (!direccion) return 'No especificada'
+  
+  try {
+    // Si es un string JSON, parsearlo
+    if (typeof direccion === 'string' && direccion.startsWith('{')) {
+      const direccionObj = JSON.parse(direccion)
+      const partes = []
+      
+      if (direccionObj.calle) partes.push(direccionObj.calle)
+      if (direccionObj.ciudad) partes.push(direccionObj.ciudad)
+      if (direccionObj.pais) partes.push(direccionObj.pais)
+      if (direccionObj.codigoPostal) partes.push(direccionObj.codigoPostal)
+      
+      return partes.length > 0 ? partes.join(', ') : 'No especificada'
+    }
+    
+    // Si es un objeto, procesarlo directamente
+    if (typeof direccion === 'object') {
+      const partes = []
+      if (direccion.calle) partes.push(direccion.calle)
+      if (direccion.ciudad) partes.push(direccion.ciudad)
+      if (direccion.pais) partes.push(direccion.pais)
+      if (direccion.codigoPostal) partes.push(direccion.codigoPostal)
+      
+      return partes.length > 0 ? partes.join(', ') : 'No especificada'
+    }
+    
+    // Si es un string normal, devolverlo tal como está
+    return direccion
+  } catch (error) {
+    console.error('Error al formatear dirección:', error)
+    return 'Dirección con formato inválido'
+  }
+}
+
+// Formatear datos del usuario
+const formattedUserData = computed(() => {
+  if (!userData.value) return null
+  
+  return {
+    nombre: userData.value.nombre || 'No especificado',
+    email: userData.value.email || 'No especificado',
+    telefono: userData.value.telefono || 'No especificado',
+    direccion: formatearDireccion(userData.value.direccion),
+    miembroDesde: userData.value.createdAt
+      ? new Date(userData.value.createdAt).toLocaleDateString('es-ES', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        })
+      : 'No disponible'
   }
 })
 
-const userData = computed(() => ({
-  nombre: authStore.user?.nombre || 'No especificado',
-  email: authStore.user?.email || 'No especificado',
-  telefono: authStore.user?.telefono || 'No especificado',
-  rol: authStore.user?.rol || 'cliente',
-  direccion: authStore.user?.direccion || {
-    calle: 'No especificado',
-    ciudad: 'No especificado',
-    pais: 'No especificado',
-    codigoPostal: 'No especificado'
-  },
-  miembroDesde: authStore.user?.fechaRegistro || authStore.user?.createdAt
-    ? new Date(authStore.user.fechaRegistro || authStore.user.createdAt).toLocaleDateString('es-ES', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      })
-    : 'No disponible',
-  direccionCompleta: authStore.user?.direccion 
-    ? `${authStore.user.direccion.calle}, ${authStore.user.direccion.ciudad}, ${authStore.user.direccion.pais} ${authStore.user.direccion.codigoPostal}`
-    : 'No especificada'
-}))
+// Debug del token
+const debugToken = () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    console.log('No hay token en localStorage');
+    return;
+  }
+  
+  try {
+    const payload = token.split('.')[1];
+    const decodedPayload = JSON.parse(atob(payload));
+    console.log('=== FRONTEND TOKEN DEBUG ===');
+    console.log('Payload del token:', decodedPayload);
+    
+    if (!decodedPayload.id) {
+      console.error('El token no contiene ID de usuario');
+    } else {
+      console.log('ID de usuario en token:', decodedPayload.id);
+      console.log('Es ObjectId válido?:', /^[0-9a-fA-F]{24}$/.test(decodedPayload.id));
+    }
+  } catch (error) {
+    console.error('Error al decodificar token:', error);
+  }
+}
 
-onMounted(async () => {
+// Cargar datos del perfil desde la API
+const loadUserProfile = async () => {
   try {
     loading.value = true
-    await authStore.loadUserData()
+    error.value = null
+    
+    const token = getToken()
+    if (!token) {
+      throw new Error('No autenticado. Por favor inicia sesión.')
+    }
+
+    console.log('=== FRONTEND REQUEST DEBUG ===');
+    console.log('Enviando request a: http://localhost:4000/api/usuarios/perfil');
+    console.log('Token:', token.substring(0, 50) + '...');
+
+    const response = await fetch('http://localhost:4000/api/usuarios/perfil', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.')
+      }
+      
+      const errorData = await response.json().catch(() => ({}))
+      console.log('Error response:', errorData);
+      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    console.log('=== FRONTEND RESPONSE DEBUG ===');
+    console.log('Respuesta completa:', data);
+    
+    if (data.success) {
+      // CORECCIÓN: Usar 'user' en lugar de 'usuario'
+      userData.value = data.user
+      console.log('Usuario cargado:', userData.value);
+    } else {
+      throw new Error(data.message || 'Error al cargar el perfil')
+    }
   } catch (err) {
+    console.error('=== FRONTEND ERROR ===', err);
     error.value = err.message
+    
+    if (err.message.includes('Sesión expirada') || err.message.includes('No autenticado')) {
+      setTimeout(() => {
+        router.push('/login')
+      }, 2000)
+    }
   } finally {
     loading.value = false
   }
+}
+
+// Montar componente
+onMounted(async () => {
+  console.log('=== COMPONENTE MONTADO ===');
+  
+  if (!isAuthenticated.value) {
+    error.value = 'No autenticado. Redirigiendo al login...'
+    setTimeout(() => {
+      router.push('/login')
+    }, 2000)
+    return
+  }
+  
+  debugToken()
+  await loadUserProfile()
 })
 
 const handleLogout = () => {
-  authStore.logout()
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
   router.push('/')
 }
 
 const startEdit = () => {
   editMode.value = true
   editForm.value = {
-    nombre: authStore.user?.nombre || '',
-    telefono: authStore.user?.telefono || '',
-    direccion: {
-      calle: authStore.user?.direccion?.calle || '',
-      ciudad: authStore.user?.direccion?.ciudad || '',
-      pais: authStore.user?.direccion?.pais || '',
-      codigoPostal: authStore.user?.direccion?.codigoPostal || ''
-    }
+    nombre: userData.value?.nombre || '',
+    telefono: userData.value?.telefono || '',
+    direccion: userData.value?.direccion || ''
   }
 }
 
 const cancelEdit = () => {
   editMode.value = false
-  editForm.value = {
-    nombre: '',
-    telefono: '',
-    direccion: {
-      calle: '',
-      ciudad: '',
-      pais: '',
-      codigoPostal: ''
-    }
-  }
 }
 
 const saveChanges = async () => {
@@ -91,24 +207,46 @@ const saveChanges = async () => {
     loading.value = true
     error.value = null
     
-    const response = await authStore.authenticatedFetch(`http://localhost:4000/perfil`, {
+    const token = getToken()
+    if (!token) {
+      throw new Error('No autenticado')
+    }
+
+    console.log('=== GUARDANDO CAMBIOS ===');
+    console.log('Datos a enviar:', editForm.value);
+
+    const response = await fetch('http://localhost:4000/api/usuarios/perfil', {
       method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(editForm.value)
     })
-    
-    if (response.ok) {
-      const data = await response.json()
-      authStore.user = { ...authStore.user, ...data.usuario }
+
+    const data = await response.json()
+    console.log('Respuesta actualización:', data);
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Error al actualizar perfil')
+    }
+
+    if (data.success) {
+      // Actualizar datos locales
+      userData.value = { ...userData.value, ...editForm.value }
       editMode.value = false
       
-      // Notificación moderna
       showNotification('Perfil actualizado correctamente', 'success')
+      
+      // Recargar perfil para obtener datos actualizados
+      await loadUserProfile()
     } else {
-      const errorData = await response.json()
-      throw new Error(errorData.mensaje || 'Error al actualizar perfil')
+      throw new Error(data.message || 'Error al actualizar perfil')
     }
   } catch (err) {
+    console.error('Error al guardar:', err);
     error.value = err.message
+    showNotification(err.message, 'error')
   } finally {
     loading.value = false
   }
@@ -124,7 +262,7 @@ const showNotification = (message, type = 'success') => {
   notification.innerHTML = `
     <div class="flex items-center space-x-3">
       <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${type === 'success' ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12'}" />
       </svg>
       <span class="font-medium">${message}</span>
     </div>
@@ -206,15 +344,15 @@ const showNotification = (message, type = 'success') => {
             <div class="space-y-4">
               <div class="flex items-center justify-between">
                 <span class="text-sm text-gray-600">Pedidos realizados</span>
-                <span class="font-bold text-gray-900">12</span>
+                <span class="font-bold text-gray-900">0</span>
               </div>
               <div class="flex items-center justify-between">
                 <span class="text-sm text-gray-600">Total gastado</span>
-                <span class="font-bold text-gray-900">$1,240</span>
+                <span class="font-bold text-gray-900">$0</span>
               </div>
               <div class="flex items-center justify-between">
                 <span class="text-sm text-gray-600">Productos favoritos</span>
-                <span class="font-bold text-gray-900">8</span>
+                <span class="font-bold text-gray-900">0</span>
               </div>
             </div>
           </div>
@@ -229,19 +367,19 @@ const showNotification = (message, type = 'success') => {
               <div class="relative z-10">
                 <div class="flex items-start justify-between">
                   <div>
-                    <h1 class="text-3xl font-black tracking-tight mb-2">{{ userData.nombre }}</h1>
-                    <p class="text-gray-300 text-lg mb-4">{{ userData.email }}</p>
+                    <h1 class="text-3xl font-black tracking-tight mb-2">{{ formattedUserData?.nombre || 'Cargando...' }}</h1>
+                    <p class="text-gray-300 text-lg mb-4">{{ formattedUserData?.email || 'Cargando...' }}</p>
                     <div class="flex items-center space-x-4">
                       <span class="bg-white bg-opacity-20 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider">
-                        {{ userData.rol }}
+                        Cliente
                       </span>
-                      <span class="text-sm text-gray-300">Miembro desde {{ userData.miembroDesde }}</span>
+                      <span class="text-sm text-gray-300">Miembro desde {{ formattedUserData?.miembroDesde || 'Cargando...' }}</span>
                     </div>
                   </div>
                   
                   <button
                     @click="startEdit"
-                    v-if="!editMode && !loading"
+                    v-if="!editMode && !loading && formattedUserData"
                     class="bg-white text-gray-900 hover:bg-gray-100 px-6 py-3 rounded-lg text-sm font-bold transition-all"
                   >
                     EDITAR PERFIL
@@ -253,7 +391,7 @@ const showNotification = (message, type = 'success') => {
             <!-- Body -->
             <div class="p-8">
               <!-- Loading State -->
-              <div v-if="authStore.isLoading || loading" class="text-center py-20">
+              <div v-if="loading" class="text-center py-20">
                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-black"></div>
                 <p class="mt-4 text-gray-600 font-medium">Cargando perfil...</p>
               </div>
@@ -267,16 +405,24 @@ const showNotification = (message, type = 'success') => {
                 </div>
                 <h3 class="text-xl font-bold text-gray-900 mb-2">Error al cargar perfil</h3>
                 <p class="text-gray-600 mb-6">{{ error }}</p>
-                <button 
-                  @click="router.push('/login')"
-                  class="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-semibold"
-                >
-                  Ir a Login
-                </button>
+                <div class="flex gap-4 justify-center">
+                  <button 
+                    @click="loadUserProfile"
+                    class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
+                  >
+                    Reintentar
+                  </button>
+                  <button 
+                    @click="router.push('/login')"
+                    class="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-semibold"
+                  >
+                    Ir a Login
+                  </button>
+                </div>
               </div>
 
               <!-- Content -->
-              <div v-else>
+              <div v-else-if="formattedUserData">
                 <!-- Edit Mode -->
                 <div v-if="editMode">
                   <div class="flex items-center justify-between mb-8">
@@ -321,34 +467,11 @@ const showNotification = (message, type = 'success') => {
                     
                     <div class="lg:col-span-2">
                       <label class="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Dirección</label>
-                      <div class="space-y-4">
-                        <input
-                          v-model="editForm.direccion.calle"
-                          type="text"
-                          class="w-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-black font-medium"
-                          placeholder="Calle y número"
-                        />
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <input
-                            v-model="editForm.direccion.ciudad"
-                            type="text"
-                            class="w-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-black font-medium"
-                            placeholder="Ciudad"
-                          />
-                          <input
-                            v-model="editForm.direccion.pais"
-                            type="text"
-                            class="w-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-black font-medium"
-                            placeholder="País"
-                          />
-                          <input
-                            v-model="editForm.direccion.codigoPostal"
-                            type="text"
-                            class="w-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-black font-medium"
-                            placeholder="Código postal"
-                          />
-                        </div>
-                      </div>
+                      <textarea
+                        v-model="editForm.direccion"
+                        class="w-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-black font-medium h-24 resize-none"
+                        placeholder="Tu dirección completa"
+                      ></textarea>
                     </div>
                   </div>
                 </div>
@@ -363,35 +486,35 @@ const showNotification = (message, type = 'success') => {
                     <div>
                       <label class="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Nombre completo</label>
                       <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg font-medium">
-                        {{ userData.nombre }}
+                        {{ formattedUserData.nombre }}
                       </div>
                     </div>
                     
                     <div>
                       <label class="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Email</label>
                       <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg font-medium">
-                        {{ userData.email }}
+                        {{ formattedUserData.email }}
                       </div>
                     </div>
                     
                     <div>
                       <label class="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Teléfono</label>
                       <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg font-medium">
-                        {{ userData.telefono }}
+                        {{ formattedUserData.telefono }}
                       </div>
                     </div>
                     
                     <div>
                       <label class="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Miembro desde</label>
                       <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg font-medium">
-                        {{ userData.miembroDesde }}
+                        {{ formattedUserData.miembroDesde }}
                       </div>
                     </div>
                     
                     <div class="lg:col-span-2">
                       <label class="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Dirección</label>
                       <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg font-medium">
-                        {{ userData.direccionCompleta }}
+                        {{ formattedUserData.direccion }}
                       </div>
                     </div>
                   </div>
@@ -427,18 +550,17 @@ const showNotification = (message, type = 'success') => {
                         <span class="text-sm font-bold text-gray-900 uppercase tracking-wide">Favoritos</span>
                       </router-link>
                       
-                      <router-link 
-                        to="/direcciones" 
+                      <button 
+                        @click="startEdit" 
                         class="group bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 p-6 rounded-xl text-center transition-all"
                       >
                         <div class="mx-auto w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                         </div>
-                        <span class="text-sm font-bold text-gray-900 uppercase tracking-wide">Direcciones</span>
-                      </router-link>
+                        <span class="text-sm font-bold text-gray-900 uppercase tracking-wide">Editar Perfil</span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -464,7 +586,6 @@ const showNotification = (message, type = 'success') => {
   animation: spin 1s linear infinite;
 }
 
-/* Focus states */
 .focus\:ring-2:focus {
   ring-width: 2px;
 }
@@ -477,7 +598,6 @@ const showNotification = (message, type = 'success') => {
   border-color: rgb(0 0 0);
 }
 
-/* Hover effects */
 .group:hover .group-hover\:scale-110 {
   transform: scale(1.1);
 }

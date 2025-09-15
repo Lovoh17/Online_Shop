@@ -17,25 +17,36 @@ const priceRange = ref([0, 1000]);
 const loading = ref(false);
 const mobileFiltersOpen = ref(false);
 
-const categories = ref([
-  'Todos',
-  'Ropa',
-  'Accesorios',
-  'Hogar',
-  'Ofertas',
-  'Nuevos'
-]);
+// Categorías dinámicas (se cargarán desde la API)
+const categories = ref(['Todos']);
 
 onMounted(async () => {
   try {
     loading.value = true;
-    const res = await fetch("http://localhost:4000/productos");
+    
+    // Cargar productos
+    const res = await fetch("http://localhost:4000/api/productos");
     const data = await res.json();
-    productos.value = data.map(p => ({
-      ...p,
-      categoria: p.categoria || ['Ropa', 'Accesorios', 'Hogar'][Math.floor(Math.random() * 3)],
-      rating: p.rating || Math.floor(Math.random() * 5) + 1
-    }));
+    
+    if (data.success) {
+      // Adaptar la estructura de los productos a lo que espera el componente
+      productos.value = data.productos.map(p => ({
+        ...p,
+        _id: p._id || p.id,
+        imagenes: p.imagenes || '/placeholder-product.jpg',
+        precio: parseFloat(p.precio) || 0,
+        categoria: p.categoria || 'Sin categoría',
+        rating: p.rating || Math.floor(Math.random() * 5) + 1,
+        descuento: p.descuento || 0,
+        nuevo: p.nuevo || (new Date() - new Date(p.createdAt || p.fechaCreacion)) < (30 * 24 * 60 * 60 * 1000)
+      }));
+      
+      // Extraer categorías únicas de los productos
+      const categoriasUnicas = [...new Set(productos.value.map(p => p.categoria).filter(Boolean))];
+      categories.value = ['Todos', ...categoriasUnicas, 'Ofertas', 'Nuevos'];
+    } else {
+      console.error("Error al cargar productos:", data.message);
+    }
   } catch (error) {
     console.error("Error al cargar los productos", error);
   } finally {
@@ -46,14 +57,17 @@ onMounted(async () => {
 const filteredProducts = computed(() => {
   let result = [...productos.value];
   
+  // Filtro por búsqueda
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
     result = result.filter(producto => 
       producto.nombre.toLowerCase().includes(query) ||
-      (producto.descripcion && producto.descripcion.toLowerCase().includes(query))
+      (producto.descripcion && producto.descripcion.toLowerCase().includes(query)) ||
+      (producto.categoria && producto.categoria.toLowerCase().includes(query))
     );
   }
   
+  // Filtro por categoría
   if (activeCategory.value !== 'Todos') {
     result = result.filter(producto => {
       if (activeCategory.value === 'Ofertas') {
@@ -65,11 +79,13 @@ const filteredProducts = computed(() => {
     });
   }
   
+  // Filtro por rango de precio
   result = result.filter(producto => 
     producto.precio >= priceRange.value[0] && 
     producto.precio <= priceRange.value[1]
   );
   
+  // Ordenamiento
   switch (sortOption.value) {
     case 'Precio: menor a mayor':
       result.sort((a, b) => a.precio - b.precio);
@@ -78,12 +94,13 @@ const filteredProducts = computed(() => {
       result.sort((a, b) => b.precio - a.precio);
       break;
     case 'Más nuevos':
-      result.sort((a, b) => new Date(b.fechaCreacion || new Date()) - new Date(a.fechaCreacion || new Date()));
+      result.sort((a, b) => new Date(b.createdAt || b.fechaCreacion) - new Date(a.createdAt || a.fechaCreacion));
       break;
     case 'Mejor valorados':
       result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
       break;
     default:
+      // Orden por defecto (Recomendados)
       break;
   }
   
@@ -101,7 +118,31 @@ const addToCart = async (productoId) => {
   }
 
   try {
-    await cartStore.addToCart(productoId);
+    // Usar el store del carrito o hacer la petición directamente a la API
+    if (cartStore.addToCart) {
+      await cartStore.addToCart(productoId);
+    } else {
+      // Si no hay store, hacer la petición directamente
+      const response = await fetch('http://localhost:4000/api/carrito', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authStore.token}`
+        },
+        body: JSON.stringify({
+          productoId: productoId,
+          cantidad: 1
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Error al agregar al carrito');
+      }
+    }
+    
+    // Mostrar notificación
     const notification = document.createElement('div');
     notification.className = 'fixed bottom-4 right-4 bg-black text-white px-6 py-3 rounded-lg shadow-lg z-50';
     notification.textContent = 'Producto agregado al carrito';
@@ -112,7 +153,7 @@ const addToCart = async (productoId) => {
     }, 3000);
   } catch (error) {
     console.error('Error al agregar al carrito:', error);
-    alert('Error al agregar el producto al carrito');
+    alert('Error al agregar el producto al carrito: ' + error.message);
   }
 };
 
@@ -121,14 +162,6 @@ const resetFilters = () => {
   activeCategory.value = 'Todos';
   priceRange.value = [0, 1000];
   sortOption.value = 'Recomendados';
-};
-
-const handleSearch = (query) => {
-  searchQuery.value = query;
-};
-
-const handleCategoryChange = (category) => {
-  activeCategory.value = category;
 };
 
 const toggleMobileFilters = () => {
@@ -259,7 +292,7 @@ const toggleMobileFilters = () => {
     <div class="h-96 flex items-center justify-center">
       <div class="text-center px-4 max-w-4xl">
         <h1 class="text-5xl md:text-6xl font-black mb-6 tracking-tight">NUEVA COLECCIÓN</h1>
-        <p class="text-xl mb-8 text-gray-300">Hasta 70% de descuento en seleccionados</p>
+        <p class="text-xl mb-8 text-gray-300">Descubre nuestros productos exclusivos</p>
         <router-link 
           to="/productos"
           class="inline-block bg-white text-black font-bold px-8 py-4 text-sm uppercase tracking-wider hover:bg-gray-100 transition-colors"
