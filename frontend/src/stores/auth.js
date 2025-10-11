@@ -45,7 +45,10 @@ export const useAuthStore = defineStore('auth', () => {
             isLoading.value = true
             error.value = null
             
-            const response = await fetch('http://localhost:4000/login', {
+            console.log('=== 🔐 LOGIN REQUEST ===')
+            console.log('URL:', 'http://localhost:4000/api/usuarios/login')
+            
+            const response = await fetch('http://localhost:4000/api/usuarios/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
@@ -53,23 +56,44 @@ export const useAuthStore = defineStore('auth', () => {
 
             const data = await response.json()
 
-            if(response.ok) {
+            console.log('=== 📥 RESPUESTA DEL SERVIDOR ===')
+            console.log('Response OK:', response.ok)
+            console.log('Status:', response.status)
+            console.log('Data completa:', data)
+            console.log('data.success:', data.success)
+            console.log('data.user:', data.user)
+            console.log('data.token:', data.token ? 'Presente' : 'Ausente')
+
+            if(response.ok && data.success) {
+                console.log('=== 💾 GUARDANDO EN STORE ===')
+                
+                // ✅ CORREGIDO: Acceder a data.user (no directamente a data)
+                const userData = data.user || {}
+                console.log('userData completo:', userData)
+                console.log('userData._id:', userData._id)
+                console.log('userData.nombre:', userData.nombre)
+                console.log('userData.email:', userData.email)
+                
                 isAuthenticated.value = true
                 user.value = { 
-                    nombre: data.nombre,
-                    email: data.email,
-                    id: data.id
+                    id: userData._id?.toString() || userData.id?.toString(),
+                    nombre: userData.nombre,
+                    email: userData.email
                 }
                 token.value = data.token
                 localStorage.setItem('token', data.token)
-                console.log('Login exitoso, token guardado')
+                
+                console.log('✅ Usuario guardado en store:', user.value)
+                console.log('✅ Token guardado en localStorage')
+                console.log('✅ isAuthenticated:', isAuthenticated.value)
+                
                 router.push('/dashboard')
             } else {
-                throw new Error(data.mensaje || 'Error en el login')
+                throw new Error(data.message || data.mensaje || 'Error en el login')
             }
         } catch (error) {
             error.value = error.message
-            console.error('Error en login:', error)
+            console.error('❌ Error en login:', error)
             throw error
         } finally {
             isLoading.value = false
@@ -80,11 +104,12 @@ export const useAuthStore = defineStore('auth', () => {
         try {
             isLoading.value = true
             error.value = null
+            
             if (!token.value || isTokenExpired()) {
                 throw new Error('Token expirado')
             }
 
-            const response = await fetch('http://localhost:4000/perfil', {
+            const response = await fetch('http://localhost:4000/api/usuarios/perfil', {
                 headers: {
                     'Authorization': `Bearer ${token.value}`
                 }
@@ -98,10 +123,17 @@ export const useAuthStore = defineStore('auth', () => {
             }
 
             const data = await response.json()
-            user.value = {
-                ...user.value,
-                ...data.usuario,
-                createdAt: data.usuario.createdAt ? new Date(data.usuario.createdAt) : null
+            
+            console.log('=== 📦 DATOS DE PERFIL ===')
+            console.log('Data:', data)
+
+            if (data.success && data.usuario) {
+                user.value = {
+                    id: data.usuario.id || data.usuario._id?.toString(),
+                    nombre: data.usuario.nombre,
+                    email: data.usuario.email,
+                    creadoEn: data.usuario.creadoEn ? new Date(data.usuario.creadoEn) : null
+                }
             }
         } catch (err) {
             error.value = err.message
@@ -116,6 +148,7 @@ export const useAuthStore = defineStore('auth', () => {
             isLoading.value = false
         }
     }
+
     const authenticatedFetch = async (url, options = {}) => {
         if (!token.value || isTokenExpired()) {
             console.log('Token expirado o ausente, haciendo logout...')
@@ -129,11 +162,19 @@ export const useAuthStore = defineStore('auth', () => {
             ...options.headers
         }
 
+        console.log('=== 🔐 AUTHENTICATED FETCH ===')
+        console.log('URL:', url)
+        console.log('Token presente:', !!token.value)
+        console.log('Authorization header:', headers.Authorization?.substring(0, 50) + '...')
+
         try {
             const response = await fetch(url, {
                 ...options,
                 headers
             })
+
+            console.log('Response status:', response.status)
+
             if (response.status === 401) {
                 console.log('Respuesta 401, token inválido, haciendo logout...')
                 logout()
@@ -148,10 +189,11 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     const logout = () => {
-        console.log('Cerrando sesión...')
+        console.log('🚪 Cerrando sesión...')
         clearAuth()
         router.push('/login')
     }
+
     const checkAuth = () => {
         const storedToken = localStorage.getItem('token')
         
@@ -160,21 +202,22 @@ export const useAuthStore = defineStore('auth', () => {
             
             if (!isTokenExpired()) {
                 isAuthenticated.value = true
-                console.log('Autenticación restaurada desde localStorage')
+                console.log('✅ Autenticación restaurada desde localStorage')
             } else {
-                console.log('Token expirado en localStorage, limpiando...')
+                console.log('⚠️ Token expirado en localStorage, limpiando...')
                 clearAuth()
             }
         }
     }
 
-    // Método de registro
     const register = async (userData) => {
         try {
             isLoading.value = true
             error.value = null
             
-            const response = await fetch('http://localhost:4000/register', {
+            console.log('=== 📝 REGISTRO REQUEST ===')
+            
+            const response = await fetch('http://localhost:4000/api/usuarios/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -186,23 +229,33 @@ export const useAuthStore = defineStore('auth', () => {
 
             const data = await response.json()
 
-            if(response.ok) {
+            console.log('=== 📥 RESPUESTA DE REGISTRO ===')
+            console.log('Response OK:', response.ok)
+            console.log('Data completa:', data)
+
+            if(response.ok && data.success) {
+                // ✅ CORREGIDO: Acceder a data.usuario (respuesta del registro)
+                const userData = data.usuario || {}
+                
                 isAuthenticated.value = true
                 user.value = { 
-                    nombre: data.nombre,
-                    email: data.email,
-                    id: data.id
+                    id: userData.id || userData._id?.toString(),
+                    nombre: userData.nombre,
+                    email: userData.email
                 }
                 token.value = data.token
                 localStorage.setItem('token', data.token)
-                console.log('Registro exitoso, token guardado')
-                router.push('/') // Redirigir a página principal
+                
+                console.log('✅ Registro exitoso!')
+                console.log('Usuario guardado:', user.value)
+                
+                router.push('/dashboard')
             } else {
-                throw new Error(data.mensaje || 'Error en el registro')
+                throw new Error(data.message || data.mensaje || 'Error en el registro')
             }
         } catch (error) {
             error.value = error.message
-            console.error('Error en registro:', error)
+            console.error('❌ Error en registro:', error)
             throw error
         } finally {
             isLoading.value = false

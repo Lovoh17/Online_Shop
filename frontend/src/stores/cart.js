@@ -15,7 +15,7 @@ export const useCartStore = defineStore('cart', () => {
     try {
       console.log('Fetching cart...') // Debug
       
-      const response = await authStore.authenticatedFetch('http://localhost:3000/carrito', {
+      const response = await authStore.authenticatedFetch('http://localhost:4000/api/carrito', {
         method: 'GET'
       })
       
@@ -54,7 +54,7 @@ export const useCartStore = defineStore('cart', () => {
     try {
       console.log('Adding to cart:', { productId, quantity }) // Debug
       
-      const response = await authStore.authenticatedFetch('http://localhost:3000/carrito', {
+      const response = await authStore.authenticatedFetch('http://localhost:4000/api/carrito', {
         method: 'POST',
         body: JSON.stringify({ 
           productoId: productId, 
@@ -90,7 +90,7 @@ export const useCartStore = defineStore('cart', () => {
     error.value = null
     
     try {
-      const response = await authStore.authenticatedFetch(`http://localhost:3000/carrito/${productId}`, {
+      const response = await authStore.authenticatedFetch(`http://localhost:4000/api/carrito/${productId}`, {
         method: 'DELETE'
       })
       
@@ -124,7 +124,7 @@ export const useCartStore = defineStore('cart', () => {
         throw new Error('La cantidad debe ser mayor a 0')
       }
 
-      const response = await authStore.authenticatedFetch(`http://localhost:3000/carrito/${productId}`, {
+      const response = await authStore.authenticatedFetch(`http://localhost:4000/api/carrito/${productId}`, {
         method: 'PUT',
         body: JSON.stringify({ cantidad: newQuantity })
       })

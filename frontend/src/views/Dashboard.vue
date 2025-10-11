@@ -1,535 +1,473 @@
+<template>
+  <!-- Navbar Mejorado -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-white border-b border-[#E5E5E5]">
+    <div class="container mx-auto px-4 h-20 flex items-center justify-center">
+      <!-- Menu completo centrado -->
+      <div class="hidden lg:flex items-center justify-center space-x-12">
+        <router-link 
+          to="/products"
+          class="text-[#1E3A34] font-semibold text-sm uppercase tracking-wide hover:text-[#C2B280] transition-colors"
+        >
+          Shop All
+        </router-link>
+        <a 
+          href="/products-Mens"
+          class="text-[#1E3A34] font-semibold text-sm uppercase tracking-wide hover:text-[#C2B280] transition-colors"
+        >
+          Men's
+        </a>
+        <a 
+          href="#"
+          class="text-[#1E3A34] font-semibold text-sm uppercase tracking-wide hover:text-[#C2B280] transition-colors"
+        >
+          Women's
+        </a>
+
+        <!-- Logo Centro - Destacado -->
+        <div class="flex items-center justify-center px-12 py-2 border-l border-r border-[#E5E5E5]">
+          <img src="../assets/Gemini_Generated_Image_yjx0cbyjx0cbyjx0-removebg-preview.png" alt="DRIP OUTDOOR" class="h-14 w-14">
+        </div>
+
+        <a 
+          href="#"
+          class="text-[#1E3A34] font-semibold text-sm uppercase tracking-wide hover:text-[#C2B280] transition-colors"
+        >
+          By Activity
+        </a>
+        <a 
+          href="#"
+          class="text-[#1E3A34] font-semibold text-sm uppercase tracking-wide hover:text-[#C2B280] transition-colors"
+        >
+          News
+        </a>
+        <a 
+          href="#"
+          class="text-[#E57C23] font-semibold text-sm uppercase tracking-wide hover:text-[#1E3A34] transition-colors"
+        >
+          Sale
+        </a>
+      </div>
+
+      <!-- Iconos Derecha (siempre visibles) -->
+      <div class="absolute right-4 flex items-center space-x-6">
+        <!-- Search -->
+        <button class="text-[#1E3A34] hover:text-[#C2B280] transition-colors">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </button>
+
+        <!-- User -->
+        <router-link 
+          to="/login"
+          class="text-[#1E3A34] hover:text-[#C2B280] transition-colors"
+        >
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+        </router-link>
+
+        <!-- Cart -->
+        <router-link 
+          to="/carrito"
+          class="text-[#1E3A34] hover:text-[#C2B280] transition-colors relative"
+        >
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        </router-link>
+
+        <!-- Mobile Menu Button -->
+        <button class="lg:hidden text-[#1E3A34] hover:text-[#C2B280] transition-colors">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Logo para móvil (centrado) -->
+      <div class="lg:hidden flex items-center space-x-2">
+        <img src="../assets/logo-drip-outdoor.svg" alt="DRIP OUTDOOR" class="h-8 w-8">
+        <span class="text-[#1E3A34] font-black text-lg tracking-tight">DRIP</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative h-screen overflow-hidden bg-gradient-to-br from-[#1E3A34] to-[#2D5A4B]">
+    <div class="absolute inset-0 z-0">
+      <video 
+        autoplay 
+        muted 
+        loop 
+        class="w-full h-full object-cover"
+        poster="../assets/hero-poster.jpg"
+      >
+        <source src="../assets/brands/envato_video_gen_Oct_11_2025_18_30_38.mp4" type="video/mp4">
+      </video>
+    </div>
+
+    <!-- Hero Content -->
+    <div class="relative z-20 h-full flex items-center justify-center text-center px-4">
+      <div class="max-w-4xl">
+        <h1 class="text-6xl md:text-8xl font-black mb-6 tracking-tight text-white uppercase">
+          Vive la <span class="text-[#C2B280]">Aventura</span>
+        </h1>
+        <p class="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto leading-relaxed">
+          Equipamiento premium para quienes desafían los límites. Donde la naturaleza encuentra su estilo.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <router-link 
+            to="/products"
+            class="bg-[#C2B280] text-[#1E3A34] font-bold px-8 py-4 text-lg uppercase tracking-wider hover:bg-[#D8C69E] transition-all duration-300 transform hover:scale-105 rounded-lg shadow-lg"
+          >
+            Descubrir Colección
+          </router-link>
+          <a 
+            href="#aventuras"
+            class="border-2 border-white text-white font-bold px-8 py-4 text-lg uppercase tracking-wider hover:bg-white hover:text-[#1E3A34] transition-all duration-300 rounded-lg"
+          >
+            Nuestras Aventuras
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scroll Indicator -->
+    <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20">
+      <div class="animate-bounce">
+        <svg class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sección Identidad de Marca -->
+  <section id="nosotros" class="py-20 bg-white">
+    <div class="container mx-auto px-4">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <!-- Imagen -->
+        <div class="relative">
+          <div class="aspect-square rounded-2xl overflow-hidden shadow-2xl">
+            <img 
+              src="../assets/Rafa_Note_20_-_2025-10-11_18.36.54-removebg-preview.png" 
+              alt="Identidad DRIP OUTDOOR"
+              class="w-full h-full object-cover"
+            >
+          </div>
+          <div class="absolute -bottom-6 -right-6 w-48 h-48 bg-[#C2B280] rounded-2xl -z-10"></div>
+        </div>
+
+        <!-- Contenido -->
+        <div class="space-y-6">
+          <h2 class="text-5xl font-black text-[#1E3A34] tracking-tight">
+            Más que <span class="text-[#C2B280]">ropa</span>, una <span class="text-[#E57C23]">actitud</span>
+          </h2>
+          <p class="text-lg text-[#5E5E5E] leading-relaxed">
+            En DRIP OUTDOOR fusionamos el rendimiento técnico con el diseño urbano. Creemos que la aventura no tiene horarios y que el equipamiento debe acompañarte desde la montaña hasta la ciudad.
+          </p>
+          
+          <div class="grid grid-cols-2 gap-6 pt-6">
+            <div class="space-y-2">
+              <div class="w-12 h-12 bg-[#1E3A34] rounded-lg flex items-center justify-center">
+                <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 class="font-bold text-[#1E3A34]">Rendimiento</h3>
+              <p class="text-sm text-[#5E5E5E]">Tecnología outdoor de alto nivel</p>
+            </div>
+            
+            <div class="space-y-2">
+              <div class="w-12 h-12 bg-[#C2B280] rounded-lg flex items-center justify-center">
+                <svg class="h-6 w-6 text-[#1E3A34]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 class="font-bold text-[#1E3A34]">Estilo</h3>
+              <p class="text-sm text-[#5E5E5E]">Diseño que trasciende lo convencional</p>
+            </div>
+            
+            <div class="space-y-2">
+              <div class="w-12 h-12 bg-[#E57C23] rounded-lg flex items-center justify-center">
+                <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              </div>
+              <h3 class="font-bold text-[#1E3A34]">Sostenibilidad</h3>
+              <p class="text-sm text-[#5E5E5E]">Comprometidos con el planeta</p>
+            </div>
+            
+            <div class="space-y-2">
+              <div class="w-12 h-12 bg-[#4F7C63] rounded-lg flex items-center justify-center">
+                <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <h3 class="font-bold text-[#1E3A34]">Comunidad</h3>
+              <p class="text-sm text-[#5E5E5E]">Unidos por la pasión outdoor</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sección Colección Destacada -->
+  <section id="coleccion" class="py-20 bg-[#F8F5F0]">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-16">
+        <h2 class="text-5xl font-black text-[#1E3A34] mb-4 tracking-tight">COLECCIÓN <span class="text-[#E57C23]">2025</span></h2>
+        <p class="text-xl text-[#5E5E5E] max-w-2xl mx-auto">
+          Diseñada para los exploradores urbanos, los aventureros de fin de semana y los amantes de la naturaleza.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Producto 1 -->
+        <div class="group relative overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-2xl transition-all duration-500">
+          <div class="aspect-[4/5] overflow-hidden">
+            <img 
+              src="../assets/termica.png" 
+              alt="Chaquetas Térmicas"
+              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            >
+            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 p-6 text-white transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+            <h3 class="text-2xl font-black mb-2">TECHWEAR</h3>
+            <p class="text-sm opacity-90">Rendimiento extremo, estilo urbano</p>
+            <button class="mt-4 bg-[#C2B280] text-[#1E3A34] px-6 py-2 font-bold text-sm uppercase tracking-wider hover:bg-white transition-colors rounded-lg">
+              Explorar
+            </button>
+          </div>
+        </div>
+
+        <!-- Producto 2 -->
+        <div class="group relative overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-2xl transition-all duration-500">
+          <div class="aspect-[4/5] overflow-hidden">
+            <img 
+              src="../assets/equipamiento.jpg" 
+              alt="Equipamento Montaña"
+              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            >
+            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 p-6 text-white transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+            <h3 class="text-2xl font-black mb-2">ALTA MONTAÑA</h3>
+            <p class="text-sm opacity-90">Para los que buscan las cumbres</p>
+            <button class="mt-4 bg-[#C2B280] text-[#1E3A34] px-6 py-2 font-bold text-sm uppercase tracking-wider hover:bg-white transition-colors rounded-lg">
+              Explorar
+            </button>
+          </div>
+        </div>
+
+        <!-- Producto 3 -->
+        <div class="group relative overflow-hidden rounded-2xl bg-white shadow-lg hover:shadow-2xl transition-all duration-500">
+          <div class="aspect-[4/5] overflow-hidden">
+            <img 
+              src="../assets/accesorios.jpg" 
+              alt="Accesorios Outdoor"
+              class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            >
+            <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 p-6 text-white transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+            <h3 class="text-2xl font-black mb-2">URBAN EXPLORER</h3>
+            <p class="text-sm opacity-90">De la ciudad a la naturaleza</p>
+            <button class="mt-4 bg-[#C2B280] text-[#1E3A34] px-6 py-2 font-bold text-sm uppercase tracking-wider hover:bg-white transition-colors rounded-lg">
+              Explorar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sección Aventuras -->
+  <section id="aventuras" class="py-20 bg-[#1E3A34] text-white">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-16">
+        <h2 class="text-5xl font-black mb-4 tracking-tight">NUESTRAS <span class="text-[#C2B280]">AVENTURAS</span></h2>
+        <p class="text-xl text-white/80 max-w-2xl mx-auto">
+          Conoce las historias de nuestra comunidad y descubre nuevos destinos.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <!-- Galería -->
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-4">
+            <div class="aspect-square rounded-2xl overflow-hidden">
+              <img src="../assets/brands/envato_video_gen_Oct_11_2025_18_23_35.mp4" alt="Aventura Montaña" class="w-full h-full object-cover hover:scale-110 transition-transform duration-700">
+            </div>
+            <div class="aspect-video rounded-2xl overflow-hidden">
+              <img src="../assets/adventure-2.jpg" alt="Camping" class="w-full h-full object-cover hover:scale-110 transition-transform duration-700">
+            </div>
+          </div>
+          <div class="space-y-4 pt-8">
+            <div class="aspect-video rounded-2xl overflow-hidden">
+              <img src="../assets/adventure-3.jpg" alt="Escalada" class="w-full h-full object-cover hover:scale-110 transition-transform duration-700">
+            </div>
+            <div class="aspect-square rounded-2xl overflow-hidden">
+              <img src="../assets/adventure-4.jpg" alt="Senderismo" class="w-full h-full object-cover hover:scale-110 transition-transform duration-700">
+            </div>
+          </div>
+        </div>
+
+        <!-- Contenido -->
+        <div class="space-y-6">
+          <h3 class="text-4xl font-black">Explora. Descubre. <span class="text-[#E57C23]">Vive.</span></h3>
+          <p class="text-lg leading-relaxed text-white/80">
+            Cada producto DRIP OUTDOOR está diseñado para acompañarte en tus aventuras. Desde las montañas más altas hasta los senderos urbanos, nuestra comunidad comparte una pasión común: explorar el mundo con estilo y propósito.
+          </p>
+          
+          <div class="space-y-4">
+            <div class="flex items-center space-x-4">
+              <div class="w-2 h-2 bg-[#C2B280] rounded-full"></div>
+              <span class="font-semibold">Expediciones organizadas</span>
+            </div>
+            <div class="flex items-center space-x-4">
+              <div class="w-2 h-2 bg-[#C2B280] rounded-full"></div>
+              <span class="font-semibold">Comunidad global de aventureros</span>
+            </div>
+            <div class="flex items-center space-x-4">
+              <div class="w-2 h-2 bg-[#C2B280] rounded-full"></div>
+              <span class="font-semibold">Guías y recursos exclusivos</span>
+            </div>
+          </div>
+
+          <button class="bg-[#C2B280] text-[#1E3A34] font-bold px-8 py-4 text-lg uppercase tracking-wider hover:bg-white transition-all duration-300 transform hover:scale-105 rounded-lg">
+            Unirse a la Comunidad
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sección Marcas -->
+  <section id="marcas" class="py-20 bg-white">
+    <div class="container mx-auto px-4">
+      <div class="text-center mb-16">
+        <h2 class="text-5xl font-black text-[#1E3A34] mb-4 tracking-tight">MARCAS <span class="text-[#E57C23]">RECONOCIDAS</span></h2>
+        <p class="text-xl text-[#5E5E5E] max-w-2xl mx-auto">
+          Trabajamos con los líderes en equipamiento outdoor para ofrecerte lo mejor.
+        </p>
+      </div>
+
+      <!-- Carrusel de Marcas Mejorado -->
+      <div class="relative">
+        <div class="overflow-hidden py-8">
+          <div class="flex animate-scroll space-x-12">
+            <div 
+              v-for="(brand, index) in brands" 
+              :key="index"
+              class="flex-none w-48 h-24 flex items-center justify-center bg-white border border-[#E5E5E5] rounded-lg hover:shadow-lg transition-all duration-300 p-4"
+            >
+              <img 
+                :src="brand.logo" 
+                :alt="brand.name"
+                class="max-h-16 max-w-full object-contain"
+                @error="handleBrandImageError(brand.name)"
+              />
+            </div>
+            <!-- Duplicado para efecto infinito -->
+            <div 
+              v-for="(brand, index) in brands" 
+              :key="index + brands.length"
+              class="flex-none w-48 h-24 flex items-center justify-center bg-white border border-[#E5E5E5] rounded-lg hover:shadow-lg transition-all duration-300 p-4"
+            >
+              <img 
+                :src="brand.logo" 
+                :alt="brand.name"
+                class="max-h-16 max-w-full object-contain"
+                @error="handleBrandImageError(brand.name)"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <!-- Overlay sólidos -->
+        <div class="absolute left-0 top-0 w-16 h-full bg-white z-10"></div>
+        <div class="absolute right-0 top-0 w-16 h-full bg-white z-10"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Final -->
+  <section class="py-20 bg-gradient-to-br from-[#1E3A34] to-[#2D5A4B] text-white">
+    <div class="container mx-auto px-4 text-center">
+      <h2 class="text-5xl font-black mb-6 tracking-tight">¿LISTO PARA LA <span class="text-[#C2B280]">AVENTURA</span>?</h2>
+      <p class="text-xl mb-8 max-w-2xl mx-auto text-white/90">
+        Únete a miles de exploradores que ya confían en DRIP OUTDOOR para sus aventuras.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <router-link 
+          to="/productos"
+          class="bg-[#C2B280] text-[#1E3A34] font-bold px-8 py-4 text-lg uppercase tracking-wider hover:bg-white hover:scale-105 transition-all duration-300 rounded-lg shadow-lg"
+        >
+          Comprar Ahora
+        </router-link>
+        <a 
+          href="#"
+          class="border-2 border-white text-white font-bold px-8 py-4 text-lg uppercase tracking-wider hover:bg-white hover:text-[#1E3A34] transition-all duration-300 rounded-lg"
+        >
+          Contactar Asesor
+        </a>
+      </div>
+    </div>
+  </section>
+
+
+</template>
+
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useCartStore } from '@/stores/cart';
-import { useAuthStore } from '@/stores/auth';
-import { useRouter } from 'vue-router';
+import { ref } from 'vue';
 
-const productos = ref([]);
-const imageError = ref({});
-const cartStore = useCartStore();
-const authStore = useAuthStore();
-const router = useRouter();
+// Marcas para el carrusel
+const brands = ref([
+  { name: 'Columbia', logo: new URL('../assets/brands/logo_columbia.jpg', import.meta.url).href },
+  { name: 'The North Face', logo: new URL('../assets/brands/The-North-Face-Logo.png', import.meta.url).href },
+  { name: 'Free Country', logo: new URL('../assets/brands/Free_Country_logoBlack_Logo.jpg', import.meta.url).href },
+  { name: 'Bimimi Bay', logo: new URL('../assets/brands/bimini_bay_logo_1edb5d13-23e4-4ca1-90d9-376fc602add9_140x@2x.avif', import.meta.url).href },
+  { name: 'Patagonia', logo: new URL('../assets/brands/OIP.webp', import.meta.url).href },
+  { name: 'Marmot', logo: new URL('../assets/brands/marmot-logo.jpg', import.meta.url).href },
+]);
 
-const searchQuery = ref('');
-const sortOption = ref('Recomendados');
-const activeCategory = ref('Todos');
-const priceRange = ref([0, 1000]);
-const loading = ref(false);
-const mobileFiltersOpen = ref(false);
-
-// Categorías dinámicas (se cargarán desde la API)
-const categories = ref(['Todos']);
-
-onMounted(async () => {
-  try {
-    loading.value = true;
-    
-    // Cargar productos
-    const res = await fetch("http://localhost:4000/api/productos");
-    const data = await res.json();
-    
-    if (data.success) {
-      // Adaptar la estructura de los productos a lo que espera el componente
-      productos.value = data.productos.map(p => ({
-        ...p,
-        _id: p._id || p.id,
-        imagenes: p.imagenes || '/placeholder-product.jpg',
-        precio: parseFloat(p.precio) || 0,
-        categoria: p.categoria || 'Sin categoría',
-        rating: p.rating || Math.floor(Math.random() * 5) + 1,
-        descuento: p.descuento || 0,
-        nuevo: p.nuevo || (new Date() - new Date(p.createdAt || p.fechaCreacion)) < (30 * 24 * 60 * 60 * 1000)
-      }));
-      
-      // Extraer categorías únicas de los productos
-      const categoriasUnicas = [...new Set(productos.value.map(p => p.categoria).filter(Boolean))];
-      categories.value = ['Todos', ...categoriasUnicas, 'Ofertas', 'Nuevos'];
-    } else {
-      console.error("Error al cargar productos:", data.message);
-    }
-  } catch (error) {
-    console.error("Error al cargar los productos", error);
-  } finally {
-    loading.value = false;
-  }
-});
-
-const filteredProducts = computed(() => {
-  let result = [...productos.value];
-  
-  // Filtro por búsqueda
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    result = result.filter(producto => 
-      producto.nombre.toLowerCase().includes(query) ||
-      (producto.descripcion && producto.descripcion.toLowerCase().includes(query)) ||
-      (producto.categoria && producto.categoria.toLowerCase().includes(query))
-    );
-  }
-  
-  // Filtro por categoría
-  if (activeCategory.value !== 'Todos') {
-    result = result.filter(producto => {
-      if (activeCategory.value === 'Ofertas') {
-        return producto.descuento > 0;
-      } else if (activeCategory.value === 'Nuevos') {
-        return producto.nuevo;
-      }
-      return producto.categoria === activeCategory.value;
-    });
-  }
-  
-  // Filtro por rango de precio
-  result = result.filter(producto => 
-    producto.precio >= priceRange.value[0] && 
-    producto.precio <= priceRange.value[1]
-  );
-  
-  // Ordenamiento
-  switch (sortOption.value) {
-    case 'Precio: menor a mayor':
-      result.sort((a, b) => a.precio - b.precio);
-      break;
-    case 'Precio: mayor a menor':
-      result.sort((a, b) => b.precio - a.precio);
-      break;
-    case 'Más nuevos':
-      result.sort((a, b) => new Date(b.createdAt || b.fechaCreacion) - new Date(a.createdAt || a.fechaCreacion));
-      break;
-    case 'Mejor valorados':
-      result.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-      break;
-    default:
-      // Orden por defecto (Recomendados)
-      break;
-  }
-  
-  return result;
-});
-
-const handleImageError = (productoId) => {
-  imageError.value[productoId] = true;
-};
-
-const addToCart = async (productoId) => {
-  if (!authStore.isAuthenticated) {
-    router.push('/login');
-    return;
-  }
-
-  try {
-    // Usar el store del carrito o hacer la petición directamente a la API
-    if (cartStore.addToCart) {
-      await cartStore.addToCart(productoId);
-    } else {
-      // Si no hay store, hacer la petición directamente
-      const response = await fetch('http://localhost:4000/api/carrito', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authStore.token}`
-        },
-        body: JSON.stringify({
-          productoId: productoId,
-          cantidad: 1
-        })
-      });
-      
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.message || 'Error al agregar al carrito');
-      }
-    }
-    
-    // Mostrar notificación
-    const notification = document.createElement('div');
-    notification.className = 'fixed bottom-4 right-4 bg-black text-white px-6 py-3 rounded-lg shadow-lg z-50';
-    notification.textContent = 'Producto agregado al carrito';
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      notification.remove();
-    }, 3000);
-  } catch (error) {
-    console.error('Error al agregar al carrito:', error);
-    alert('Error al agregar el producto al carrito: ' + error.message);
-  }
-};
-
-const resetFilters = () => {
-  searchQuery.value = '';
-  activeCategory.value = 'Todos';
-  priceRange.value = [0, 1000];
-  sortOption.value = 'Recomendados';
-};
-
-const toggleMobileFilters = () => {
-  mobileFiltersOpen.value = !mobileFiltersOpen.value;
+const handleBrandImageError = (brandName) => {
+  console.error(`Error cargando logo de ${brandName}`);
 };
 </script>
 
-<template>
-  <!-- Filtros móviles -->
-  <div 
-    class="fixed inset-0 z-50 md:hidden"
-    v-show="mobileFiltersOpen"
-  >
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      <div class="fixed inset-0 bg-black bg-opacity-50" @click="mobileFiltersOpen = false"></div>
+<style scoped>
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
 
-      <div class="inline-block align-bottom bg-white rounded-t-lg px-6 pt-6 pb-4 text-left overflow-hidden shadow-xl transform sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-        <div>
-          <div class="flex justify-between items-center mb-6">
-            <h3 class="text-xl font-bold text-gray-900">Filtros</h3>
-            <button @click="mobileFiltersOpen = false" class="text-gray-500">
-              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          
-          <!-- Búsqueda móvil -->
-          <div class="mb-6">
-            <label class="block text-sm font-semibold text-gray-900 mb-2">Buscar</label>
-            <div class="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
-              <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input 
-                type="text" 
-                v-model="searchQuery"
-                placeholder="Buscar productos..." 
-                class="bg-transparent border-none focus:outline-none text-sm ml-3 w-full"
-              >
-            </div>
-          </div>
-          
-          <!-- Categorías móviles -->
-          <div class="mb-6">
-            <label class="block text-sm font-semibold text-gray-900 mb-2">Categorías</label>
-            <div class="grid grid-cols-2 gap-2">
-              <button
-                v-for="category in categories"
-                :key="'mobile-' + category"
-                @click="activeCategory = category"
-                :class="{
-                  'px-4 py-2 rounded-lg text-sm font-medium': true,
-                  'bg-black text-white': activeCategory === category,
-                  'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== category
-                }"
-              >
-                {{ category }}
-              </button>
-            </div>
-          </div>
-          
-          <!-- Rango de precio móvil -->
-          <div class="mb-6">
-            <label class="block text-sm font-semibold text-gray-900 mb-2">Precio</label>
-            <div class="px-2">
-              <div class="flex justify-between text-sm text-gray-600 mb-2">
-                <span>${{ priceRange[0] }}</span>
-                <span>${{ priceRange[1] }}</span>
-              </div>
-              <div class="flex space-x-4">
-                <input 
-                  type="range" 
-                  v-model="priceRange[0]" 
-                  :min="0" 
-                  :max="1000" 
-                  step="10"
-                  class="w-full accent-black"
-                >
-                <input 
-                  type="range" 
-                  v-model="priceRange[1]" 
-                  :min="0" 
-                  :max="1000" 
-                  step="10"
-                  class="w-full accent-black"
-                >
-              </div>
-            </div>
-          </div>
-          
-          <!-- Ordenamiento móvil -->
-          <div class="mb-6">
-            <label class="block text-sm font-semibold text-gray-900 mb-2">Ordenar por</label>
-            <select 
-              v-model="sortOption"
-              class="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-            >
-              <option>Recomendados</option>
-              <option>Más nuevos</option>
-              <option>Precio: menor a mayor</option>
-              <option>Precio: mayor a menor</option>
-              <option>Mejor valorados</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="flex space-x-3">
-          <button
-            @click="resetFilters"
-            class="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Limpiar
-          </button>
-          <button
-            @click="mobileFiltersOpen = false"
-            class="flex-1 bg-black text-white rounded-lg px-4 py-3 text-sm font-medium hover:bg-gray-800"
-          >
-            Aplicar
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Hero Section -->
-  <section class="bg-gray-900 text-white">
-    <div class="h-96 flex items-center justify-center">
-      <div class="text-center px-4 max-w-4xl">
-        <h1 class="text-5xl md:text-6xl font-black mb-6 tracking-tight">NUEVA COLECCIÓN</h1>
-        <p class="text-xl mb-8 text-gray-300">Descubre nuestros productos exclusivos</p>
-        <router-link 
-          to="/productos"
-          class="inline-block bg-white text-black font-bold px-8 py-4 text-sm uppercase tracking-wider hover:bg-gray-100 transition-colors"
-        >
-          Comprar ahora
-        </router-link>
-      </div>
-    </div>
-    
-    <div class="container mx-auto px-4 -mt-12">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-white text-black p-6 text-center">
-          <div class="text-gray-900 mb-3">
-            <svg class="h-8 w-8 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-            </svg>
-          </div>
-          <h3 class="font-bold text-sm">ENVÍO GRATIS</h3>
-          <p class="text-xs text-gray-600">En pedidos +$50</p>
-        </div>
-        <div class="bg-white text-black p-6 text-center">
-          <div class="text-gray-900 mb-3">
-            <svg class="h-8 w-8 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h3 class="font-bold text-sm">GARANTÍA</h3>
-          <p class="text-xs text-gray-600">30 días devolución</p>
-        </div>
-        <div class="bg-white text-black p-6 text-center">
-          <div class="text-gray-900 mb-3">
-            <svg class="h-8 w-8 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-            </svg>
-          </div>
-          <h3 class="font-bold text-sm">PAGO SEGURO</h3>
-          <p class="text-xs text-gray-600">100% protegido</p>
-        </div>
-        <div class="bg-white text-black p-6 text-center">
-          <div class="text-gray-900 mb-3">
-            <svg class="h-8 w-8 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h3 class="font-bold text-sm">SOPORTE 24/7</h3>
-          <p class="text-xs text-gray-600">Atención personalizada</p>
-        </div>
-      </div>
-    </div>
-  </section>
+.animate-scroll {
+  animation: scroll 40s linear infinite;
+  display: flex;
+  width: max-content;
+}
 
-  <main class="py-12 bg-white">
-    <div class="container mx-auto px-4">
-      <div class="flex flex-col md:flex-row justify-between items-center mb-8">
-        <h2 class="text-3xl font-black text-gray-900 mb-4 md:mb-0 tracking-tight">PRODUCTOS</h2>
-        <div class="flex items-center space-x-6">
-          <!-- Filtro de precio desktop -->
-          <div class="hidden md:flex items-center">
-            <span class="text-sm font-semibold text-gray-900 mr-3">Precio:</span>
-            <div class="flex items-center space-x-2">
-              <span class="text-sm font-medium">${{ priceRange[0] }}</span>
-              <input 
-                type="range" 
-                v-model="priceRange[0]" 
-                :min="0" 
-                :max="priceRange[1]" 
-                step="10"
-                class="w-24 accent-black"
-              >
-              <span class="text-sm">-</span>
-              <input 
-                type="range" 
-                v-model="priceRange[1]" 
-                :min="priceRange[0]" 
-                :max="1000" 
-                step="10"
-                class="w-24 accent-black"
-              >
-              <span class="text-sm font-medium">${{ priceRange[1] }}</span>
-            </div>
-          </div>
-          
-          <!-- Botón filtros móvil -->
-          <button 
-            @click="mobileFiltersOpen = true"
-            class="md:hidden flex items-center text-sm font-semibold text-gray-900 border border-gray-300 px-4 py-2 rounded-lg"
-          >
-            <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
-            Filtros
-          </button>
-          
-          <!-- Selector ordenamiento -->
-          <div class="flex items-center">
-            <span class="text-sm font-semibold text-gray-900 mr-3">Ordenar:</span>
-            <select 
-              v-model="sortOption"
-              class="border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-black"
-            >
-              <option>Recomendados</option>
-              <option>Más nuevos</option>
-              <option>Precio: menor a mayor</option>
-              <option>Precio: mayor a menor</option>
-              <option>Mejor valorados</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Loading -->
-      <div v-if="loading" class="text-center py-20">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-black"></div>
-        <p class="mt-4 text-gray-600 font-medium">Cargando productos...</p>
-      </div>
-      
-      <!-- Productos -->
-      <div v-else>
-        <!-- Contador y filtros -->
-        <div class="flex justify-between items-center mb-6">
-          <p class="text-sm font-medium text-gray-600">
-            {{ filteredProducts.length }} de {{ productos.length }} productos
-          </p>
-          <button 
-            @click="resetFilters"
-            v-if="searchQuery || activeCategory !== 'Todos' || priceRange[0] > 0 || priceRange[1] < 1000 || sortOption !== 'Recomendados'"
-            class="text-sm font-semibold text-gray-900 underline hover:no-underline"
-          >
-            Limpiar filtros
-          </button>
-        </div>
-        
-        <div v-if="filteredProducts.length === 0" class="text-center py-20">
-          <svg class="h-16 w-16 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <h3 class="text-xl font-bold text-gray-900 mb-2">Sin resultados</h3>
-          <p class="text-gray-600 mb-6">Intenta ajustar tus filtros</p>
-          <button 
-            @click="resetFilters"
-            class="bg-black text-white px-6 py-3 font-semibold text-sm hover:bg-gray-800"
-          >
-            Mostrar todos
-          </button>
-        </div>
-        
-        <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          <div
-            v-for="producto in filteredProducts"
-            :key="producto._id"
-            class="bg-white border border-gray-200 overflow-hidden group"
-          >
-            <div class="relative aspect-square overflow-hidden bg-gray-50">
-              <img
-                :src="producto.imagenes"
-                :alt="producto.nombre"
-                @error="handleImageError(producto._id)"
-                class="w-full h-full object-cover"
-                v-if="!imageError[producto._id]"
-              />
-              <div 
-                v-else
-                class="w-full h-full bg-gray-200 flex items-center justify-center"
-              >
-                <span class="text-gray-500 text-sm">Sin imagen</span>
-              </div>
-              
-              <button 
-                @click="addToCart(producto._id)"
-                class="absolute bottom-3 right-3 bg-black text-white w-10 h-10 flex items-center justify-center hover:bg-gray-800"
-              >
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-              </button>
-              
-              <div class="absolute top-3 left-3 flex flex-col space-y-2">
-                <span 
-                  v-if="producto.nuevo"
-                  class="bg-black text-white text-xs px-2 py-1 font-bold"
-                >
-                  NUEVO
-                </span>
-                <span 
-                  v-if="producto.descuento"
-                  class="bg-red-600 text-white text-xs px-2 py-1 font-bold"
-                >
-                  -{{ producto.descuento }}%
-                </span>
-              </div>
-            </div>
-            
-            <div class="p-4">
-              <h3 class="font-bold text-sm text-gray-900 mb-1 uppercase tracking-wide truncate">{{ producto.nombre }}</h3>
-              <p class="text-xs text-gray-500 mb-3 uppercase">{{ producto.categoria }}</p>
+.animate-scroll:hover {
+  animation-play-state: paused;
+}
 
-              <div class="flex items-center mb-2">
-                <span class="text-lg font-black text-gray-900">${{ producto.precio.toFixed(2) }}</span>
-                <span v-if="producto.precioOriginal" class="text-sm text-gray-400 line-through ml-2">${{ producto.precioOriginal.toFixed(2) }}</span>
-              </div>
+/* Smooth scrolling para anchor links */
+html {
+  scroll-behavior: smooth;
+}
 
-              <div class="flex items-center">
-                <div class="flex text-gray-400">
-                  <svg v-for="i in 5" :key="i" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                </div>
-                <span class="text-xs text-gray-500 ml-1 font-medium">({{ producto.rating || 0 }})</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="text-center mt-12">
-          <button class="border-2 border-black text-black hover:bg-black hover:text-white px-8 py-3 font-bold text-sm uppercase tracking-wider transition-colors">
-            Cargar más
-          </button>
-        </div>
-      </div>
-    </div>
-  </main>
-  
-  <!-- Newsletter -->
-  <section class="py-16 bg-gray-900 text-white">
-    <div class="container mx-auto px-4 text-center">
-      <h2 class="text-3xl font-black mb-4 tracking-tight">ÚNETE A LA COMUNIDAD</h2>
-      <p class="text-gray-300 mb-8 max-w-2xl mx-auto">10% de descuento en tu primera compra</p>
-      <div class="flex max-w-md mx-auto">
-        <input 
-          type="email" 
-          placeholder="Email" 
-          class="px-4 py-4 w-full bg-white text-black focus:outline-none font-medium"
-        >
-        <button class="bg-black border-2 border-black text-white px-8 py-4 font-bold hover:bg-white hover:text-black transition-colors">
-          SUSCRIBIR
-        </button>
-      </div>
-    </div>
-  </section>
-</template>
+/* Efectos de hover mejorados */
+.group:hover .group-hover\:scale-110 {
+  transform: scale(1.1);
+}
+</style>

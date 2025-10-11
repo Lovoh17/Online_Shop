@@ -8,7 +8,7 @@ class ProductoController {
 
     async obtenerProductos(req, res) {
         try {
-            const { pagina = 1, limite = 12, categoria, ordenar = 'nombre', orden = 'asc' } = req.query;
+            const { pagina = 1, limite = 1000, categoria, ordenar = 'nombre', orden = 'asc' } = req.query;
             
             const resultado = await this.service.obtenerProductos({
                 pagina: parseInt(pagina),

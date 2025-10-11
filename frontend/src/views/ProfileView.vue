@@ -10,7 +10,7 @@ const userData = ref(null)
 const editForm = ref({
   nombre: '',
   telefono: '',
-  direccion: ''  // Simplificado para coincidir con tu backend
+  direccion: ''
 })
 
 // Obtener token del localStorage
@@ -28,7 +28,6 @@ const formatearDireccion = (direccion) => {
   if (!direccion) return 'No especificada'
   
   try {
-    // Si es un string JSON, parsearlo
     if (typeof direccion === 'string' && direccion.startsWith('{')) {
       const direccionObj = JSON.parse(direccion)
       const partes = []
@@ -41,7 +40,6 @@ const formatearDireccion = (direccion) => {
       return partes.length > 0 ? partes.join(', ') : 'No especificada'
     }
     
-    // Si es un objeto, procesarlo directamente
     if (typeof direccion === 'object') {
       const partes = []
       if (direccion.calle) partes.push(direccion.calle)
@@ -52,7 +50,6 @@ const formatearDireccion = (direccion) => {
       return partes.length > 0 ? partes.join(', ') : 'No especificada'
     }
     
-    // Si es un string normal, devolverlo tal como está
     return direccion
   } catch (error) {
     console.error('Error al formatear dirección:', error)
@@ -115,10 +112,6 @@ const loadUserProfile = async () => {
       throw new Error('No autenticado. Por favor inicia sesión.')
     }
 
-    console.log('=== FRONTEND REQUEST DEBUG ===');
-    console.log('Enviando request a: http://localhost:4000/api/usuarios/perfil');
-    console.log('Token:', token.substring(0, 50) + '...');
-
     const response = await fetch('http://localhost:4000/api/usuarios/perfil', {
       method: 'GET',
       headers: {
@@ -126,9 +119,6 @@ const loadUserProfile = async () => {
         'Content-Type': 'application/json'
       }
     })
-
-    console.log('Response status:', response.status);
-    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -138,18 +128,13 @@ const loadUserProfile = async () => {
       }
       
       const errorData = await response.json().catch(() => ({}))
-      console.log('Error response:', errorData);
       throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`)
     }
 
     const data = await response.json()
-    console.log('=== FRONTEND RESPONSE DEBUG ===');
-    console.log('Respuesta completa:', data);
     
     if (data.success) {
-      // CORECCIÓN: Usar 'user' en lugar de 'usuario'
       userData.value = data.user
-      console.log('Usuario cargado:', userData.value);
     } else {
       throw new Error(data.message || 'Error al cargar el perfil')
     }
@@ -169,8 +154,6 @@ const loadUserProfile = async () => {
 
 // Montar componente
 onMounted(async () => {
-  console.log('=== COMPONENTE MONTADO ===');
-  
   if (!isAuthenticated.value) {
     error.value = 'No autenticado. Redirigiendo al login...'
     setTimeout(() => {
@@ -212,9 +195,6 @@ const saveChanges = async () => {
       throw new Error('No autenticado')
     }
 
-    console.log('=== GUARDANDO CAMBIOS ===');
-    console.log('Datos a enviar:', editForm.value);
-
     const response = await fetch('http://localhost:4000/api/usuarios/perfil', {
       method: 'PUT',
       headers: {
@@ -225,20 +205,16 @@ const saveChanges = async () => {
     })
 
     const data = await response.json()
-    console.log('Respuesta actualización:', data);
 
     if (!response.ok) {
       throw new Error(data.message || 'Error al actualizar perfil')
     }
 
     if (data.success) {
-      // Actualizar datos locales
       userData.value = { ...userData.value, ...editForm.value }
       editMode.value = false
       
       showNotification('Perfil actualizado correctamente', 'success')
-      
-      // Recargar perfil para obtener datos actualizados
       await loadUserProfile()
     } else {
       throw new Error(data.message || 'Error al actualizar perfil')
@@ -255,9 +231,9 @@ const saveChanges = async () => {
 const showNotification = (message, type = 'success') => {
   const notification = document.createElement('div')
   notification.className = `
-    fixed top-4 right-4 px-6 py-4 rounded-xl shadow-2xl z-50 
+    fixed top-4 right-4 px-6 py-4 shadow-lg z-50 
     transform translate-x-full transition-transform duration-300
-    ${type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}
+    ${type === 'success' ? 'bg-[#4F7C63] text-white' : 'bg-[#E57C23] text-white'}
   `
   notification.innerHTML = `
     <div class="flex items-center space-x-3">
@@ -279,288 +255,269 @@ const showNotification = (message, type = 'success') => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-[#FAFAFA]">
     <main class="max-w-7xl mx-auto px-4 py-8">
-      <div class="flex flex-col lg:flex-row gap-8">
-        <!-- Sidebar -->
-        <div class="w-full lg:w-80 flex-shrink-0">
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="p-6 bg-gradient-to-r from-gray-900 to-gray-700 text-white">
-              <h3 class="text-lg font-black tracking-tight uppercase">MI CUENTA</h3>
-              <p class="text-gray-300 text-sm mt-1">Gestiona tu información</p>
-            </div>
-            
-            <nav class="p-3">
-              <router-link 
-                to="/perfil" 
-                class="flex items-center px-4 py-3 text-sm font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all mb-1"
-                active-class="bg-gray-100 text-gray-900"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div class="flex flex-col lg:flex-row gap-6">
+        <div class="w-full lg:w-72 flex-shrink-0 space-y-6">
+          <div class="bg-white shadow-sm border border-[#E5E7EB] p-4">
+            <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-[#E5E7EB]">
+              <div class="w-10 h-10 bg-[#1E3A34] flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                INFORMACIÓN PERSONAL
+              </div>
+              <div>
+                <h3 class="font-semibold text-[#1E3A34]">Mi Cuenta</h3>
+                <p class="text-xs text-[#5E5E5E]">Panel de control</p>
+              </div>
+            </div>
+            
+            <nav class="space-y-1">
+              <router-link 
+                to="/perfil" 
+                class="flex items-center px-3 py-2.5 text-[#5E5E5E] hover:text-[#1E3A34] hover:bg-[#F9FAFB] transition-colors"
+                active-class="bg-[#1E3A34] text-white hover:bg-[#1E3A34] hover:text-white"
+              >
+                <svg class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Perfil
               </router-link>
               
               <router-link 
                 to="/pedidos" 
-                class="flex items-center px-4 py-3 text-sm font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all mb-1"
-                active-class="bg-gray-100 text-gray-900"
+                class="flex items-center px-3 py-2.5 text-[#5E5E5E] hover:text-[#1E3A34] hover:bg-[#F9FAFB] transition-colors"
+                active-class="bg-[#1E3A34] text-white hover:bg-[#1E3A34] hover:text-white"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                MIS PEDIDOS
+                Pedidos
               </router-link>
               
               <router-link 
                 to="/favoritos" 
-                class="flex items-center px-4 py-3 text-sm font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all mb-1"
-                active-class="bg-gray-100 text-gray-900"
+                class="flex items-center px-3 py-2.5 text-[#5E5E5E] hover:text-[#1E3A34] hover:bg-[#F9FAFB] transition-colors"
+                active-class="bg-[#1E3A34] text-white hover:bg-[#1E3A34] hover:text-white"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
-                FAVORITOS
+                Favoritos
               </router-link>
-              
-              <div class="border-t border-gray-100 my-3"></div>
-              
-              <button
-                @click="handleLogout"
-                class="w-full flex items-center px-4 py-3 text-sm font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-all"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                CERRAR SESIÓN
-              </button>
             </nav>
+            
+            <div class="border-t border-[#E5E7EB] my-4"></div>
+            
+            <button
+              @click="handleLogout"
+              class="w-full flex items-center px-3 py-2.5 text-[#5E5E5E] hover:text-[#E57C23] hover:bg-[#FEF2E8] transition-colors"
+            >
+              <svg class="w-4 h-4 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Cerrar Sesión
+            </button>
           </div>
-          
-          <!-- Stats card -->
-          <div class="mt-6 bg-white rounded-xl border border-gray-200 p-6">
-            <h4 class="font-black text-gray-900 text-sm uppercase tracking-wide mb-4">ESTADÍSTICAS</h4>
-            <div class="space-y-4">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">Pedidos realizados</span>
-                <span class="font-bold text-gray-900">0</span>
+
+          <!-- Estadísticas -->
+          <div class="bg-white shadow-sm border border-[#E5E7EB] p-4">
+            <h4 class="font-semibold text-[#1E3A34] mb-4">Resumen</h4>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between p-3 bg-[#F9FAFB]">
+                <div class="flex items-center space-x-3">
+                  <div class="w-8 h-8 bg-[#1E3A34] flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <span class="text-sm text-[#5E5E5E]">Pedidos</span>
+                </div>
+                <span class="font-semibold text-[#1E3A34]">0</span>
               </div>
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">Total gastado</span>
-                <span class="font-bold text-gray-900">$0</span>
+              
+              <div class="flex items-center justify-between p-3 bg-[#F9FAFB]">
+                <div class="flex items-center space-x-3">
+                  <div class="w-8 h-8 bg-[#4F7C63] flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <span class="text-sm text-[#5E5E5E]">Total Gastado</span>
+                </div>
+                <span class="font-semibold text-[#1E3A34]">$0</span>
               </div>
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-gray-600">Productos favoritos</span>
-                <span class="font-bold text-gray-900">0</span>
+              
+              <div class="flex items-center justify-between p-3 bg-[#F9FAFB]">
+                <div class="flex items-center space-x-3">
+                  <div class="w-8 h-8 bg-[#C2B280] flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                  </div>
+                  <span class="text-sm text-[#5E5E5E]">Favoritos</span>
+                </div>
+                <span class="font-semibold text-[#1E3A34]">0</span>
               </div>
             </div>
           </div>
         </div>
         
-        <!-- Main Content -->
-        <div class="flex-1">
-          <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <!-- Header -->
-            <div class="p-8 bg-gradient-to-r from-gray-900 via-gray-800 to-black text-white relative overflow-hidden">
-              <div class="absolute inset-0 bg-black/20"></div>
-              <div class="relative z-10">
-                <div class="flex items-start justify-between">
+        <!-- Contenido Principal -->
+        <div class="flex-1" style="height: 100px;">
+          <div class="bg-white shadow-sm border border-[#E5E7EB]">
+            <div class="p-6 bg-[#1E3A34] text-white border-b border-[#2A4A40]">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                  <div class="w-16 h-16 bg-[#2A4A40] flex items-center justify-center border-2 border-[#4F7C63]">
+                    <svg class="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
                   <div>
-                    <h1 class="text-3xl font-black tracking-tight mb-2">{{ formattedUserData?.nombre || 'Cargando...' }}</h1>
-                    <p class="text-gray-300 text-lg mb-4">{{ formattedUserData?.email || 'Cargando...' }}</p>
-                    <div class="flex items-center space-x-4">
-                      <span class="bg-white bg-opacity-20 text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider">
-                        Cliente
-                      </span>
-                      <span class="text-sm text-gray-300">Miembro desde {{ formattedUserData?.miembroDesde || 'Cargando...' }}</span>
+                    <h2 class="text-xl font-bold mb-1">{{ formattedUserData?.nombre || 'Cargando...' }}</h2>
+                    <p class="text-[#C2B280] text-sm mb-1">{{ formattedUserData?.email || 'Cargando...' }}</p>
+                    <div class="flex items-center space-x-3 text-xs">
+                      <span class="bg-[#2A4A40] px-2 py-1">Cliente</span>
+                      <span class="text-white/80">Miembro desde {{ formattedUserData?.miembroDesde || 'Cargando...' }}</span>
                     </div>
                   </div>
-                  
-                  <button
-                    @click="startEdit"
-                    v-if="!editMode && !loading && formattedUserData"
-                    class="bg-white text-gray-900 hover:bg-gray-100 px-6 py-3 rounded-lg text-sm font-bold transition-all"
-                  >
-                    EDITAR PERFIL
-                  </button>
                 </div>
+                
+                <button
+                  @click="startEdit"
+                  v-if="!editMode && !loading && formattedUserData"
+                  class="bg-white text-[#1E3A34] hover:bg-[#F9FAFB] px-4 py-2 text-sm font-medium transition-colors"
+                >
+                  Editar Perfil
+                </button>
               </div>
             </div>
             
-            <!-- Body -->
-            <div class="p-8">
-              <!-- Loading State -->
-              <div v-if="loading" class="text-center py-20">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-black"></div>
-                <p class="mt-4 text-gray-600 font-medium">Cargando perfil...</p>
+            <!-- Contenido del Perfil -->
+            <div class="p-6">
+              <!-- Estados -->
+              <div v-if="loading" class="text-center py-12">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#E5E7EB] border-t-[#1E3A34]"></div>
+                <p class="mt-4 text-[#5E5E5E]">Cargando información del perfil...</p>
               </div>
 
-              <!-- Error State -->
               <div v-else-if="error" class="text-center py-12">
-                <div class="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <div class="mx-auto w-16 h-16 bg-[#FEF2E8] flex items-center justify-center mb-4">
+                  <svg class="w-8 h-8 text-[#E57C23]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                 </div>
-                <h3 class="text-xl font-bold text-gray-900 mb-2">Error al cargar perfil</h3>
-                <p class="text-gray-600 mb-6">{{ error }}</p>
-                <div class="flex gap-4 justify-center">
+                <h3 class="text-xl font-semibold text-[#1E3A34] mb-2">Error al cargar perfil</h3>
+                <p class="text-[#5E5E5E] mb-6">{{ error }}</p>
+                <div class="flex gap-3 justify-center">
                   <button 
                     @click="loadUserProfile"
-                    class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
+                    class="px-5 py-2 bg-[#F9FAFB] text-[#5E5E5E] hover:bg-[#E5E7EB] transition-colors font-medium"
                   >
                     Reintentar
                   </button>
                   <button 
                     @click="router.push('/login')"
-                    class="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-semibold"
+                    class="px-5 py-2 bg-[#1E3A34] text-white hover:bg-[#2A4A40] transition-colors font-medium"
                   >
                     Ir a Login
                   </button>
                 </div>
               </div>
 
-              <!-- Content -->
-              <div v-else-if="formattedUserData">
-                <!-- Edit Mode -->
-                <div v-if="editMode">
-                  <div class="flex items-center justify-between mb-8">
-                    <h2 class="text-2xl font-black text-gray-900 tracking-tight">EDITAR INFORMACIÓN</h2>
-                    <div class="flex space-x-3">
-                      <button
-                        @click="saveChanges"
-                        :disabled="loading"
-                        class="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 font-semibold transition-all"
-                      >
-                        {{ loading ? 'GUARDANDO...' : 'GUARDAR' }}
-                      </button>
-                      <button
-                        @click="cancelEdit"
-                        class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold transition-all"
-                      >
-                        CANCELAR
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div>
-                      <label class="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Nombre completo</label>
-                      <input
-                        v-model="editForm.nombre"
-                        type="text"
-                        class="w-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-black font-medium"
-                        placeholder="Tu nombre completo"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label class="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Teléfono</label>
-                      <input
-                        v-model="editForm.telefono"
-                        type="tel"
-                        class="w-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-black font-medium"
-                        placeholder="Tu número de teléfono"
-                      />
-                    </div>
-                    
-                    <div class="lg:col-span-2">
-                      <label class="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Dirección</label>
-                      <textarea
-                        v-model="editForm.direccion"
-                        class="w-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black focus:border-black font-medium h-24 resize-none"
-                        placeholder="Tu dirección completa"
-                      ></textarea>
-                    </div>
+              <!-- Modo Edición -->
+              <div v-else-if="formattedUserData && editMode" class="space-y-6">
+                <div class="flex items-center justify-between border-b border-[#E5E7EB] pb-4">
+                  <h3 class="text-xl font-semibold text-[#1E3A34]">Editar Información Personal</h3>
+                  <div class="flex space-x-2">
+                    <button
+                      @click="saveChanges"
+                      :disabled="loading"
+                      class="px-5 py-2 bg-[#1E3A34] text-white hover:bg-[#2A4A40] disabled:opacity-50 font-medium transition-colors"
+                    >
+                      {{ loading ? 'Guardando...' : 'Guardar' }}
+                    </button>
+                    <button
+                      @click="cancelEdit"
+                      class="px-5 py-2 bg-[#F9FAFB] text-[#5E5E5E] hover:bg-[#E5E7EB] font-medium transition-colors"
+                    >
+                      Cancelar
+                    </button>
                   </div>
                 </div>
-
-                <!-- View Mode -->
-                <div v-else>
-                  <h2 class="text-2xl font-black text-gray-900 tracking-tight mb-8 border-b border-gray-200 pb-3">
-                    INFORMACIÓN PERSONAL
-                  </h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-[#1E3A34]">Nombre completo</label>
+                    <input
+                      v-model="editForm.nombre"
+                      type="text"
+                      class="w-full p-3 bg-white border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-[#1E3A34] focus:border-[#1E3A34] font-medium"
+                      placeholder="Ingresa tu nombre completo"
+                    />
+                  </div>
                   
-                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div>
-                      <label class="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Nombre completo</label>
-                      <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg font-medium">
-                        {{ formattedUserData.nombre }}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label class="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Email</label>
-                      <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg font-medium">
-                        {{ formattedUserData.email }}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label class="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Teléfono</label>
-                      <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg font-medium">
-                        {{ formattedUserData.telefono }}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label class="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Miembro desde</label>
-                      <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg font-medium">
-                        {{ formattedUserData.miembroDesde }}
-                      </div>
-                    </div>
-                    
-                    <div class="lg:col-span-2">
-                      <label class="block text-sm font-bold text-gray-900 mb-3 uppercase tracking-wide">Dirección</label>
-                      <div class="bg-gray-50 border border-gray-200 p-4 rounded-lg font-medium">
-                        {{ formattedUserData.direccion }}
-                      </div>
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-[#1E3A34]">Teléfono</label>
+                    <input
+                      v-model="editForm.telefono"
+                      type="tel"
+                      class="w-full p-3 bg-white border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-[#1E3A34] focus:border-[#1E3A34] font-medium"
+                      placeholder="Ingresa tu teléfono"
+                    />
+                  </div>
+                  
+                  <div class="lg:col-span-2 space-y-2">
+                    <label class="block text-sm font-medium text-[#1E3A34]">Dirección</label>
+                    <textarea
+                      v-model="editForm.direccion"
+                      class="w-full p-3 bg-white border border-[#E5E7EB] focus:outline-none focus:ring-2 focus:ring-[#1E3A34] focus:border-[#1E3A34] font-medium h-24 resize-none"
+                      placeholder="Ingresa tu dirección completa"
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Modo Visualización -->
+              <div v-else-if="formattedUserData" class="space-y-6">
+                <h3 class="text-xl font-semibold text-[#1E3A34] border-b border-[#E5E7EB] pb-4">
+                  Información Personal
+                </h3>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-[#5E5E5E]">Nombre completo</label>
+                    <div class="p-3 bg-[#F9FAFB] border border-[#E5E7EB] font-medium text-[#1E3A34]">
+                      {{ formattedUserData.nombre }}
                     </div>
                   </div>
                   
-                  <!-- Quick Actions -->
-                  <div class="mt-12">
-                    <h3 class="text-xl font-black text-gray-900 tracking-tight mb-6 border-b border-gray-200 pb-3">
-                      ACCIONES RÁPIDAS
-                    </h3>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <router-link 
-                        to="/pedidos" 
-                        class="group bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 p-6 rounded-xl text-center transition-all"
-                      >
-                        <div class="mx-auto w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                          </svg>
-                        </div>
-                        <span class="text-sm font-bold text-gray-900 uppercase tracking-wide">Mis Pedidos</span>
-                      </router-link>
-                      
-                      <router-link 
-                        to="/favoritos" 
-                        class="group bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 p-6 rounded-xl text-center transition-all"
-                      >
-                        <div class="mx-auto w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                          </svg>
-                        </div>
-                        <span class="text-sm font-bold text-gray-900 uppercase tracking-wide">Favoritos</span>
-                      </router-link>
-                      
-                      <button 
-                        @click="startEdit" 
-                        class="group bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 p-6 rounded-xl text-center transition-all"
-                      >
-                        <div class="mx-auto w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </div>
-                        <span class="text-sm font-bold text-gray-900 uppercase tracking-wide">Editar Perfil</span>
-                      </button>
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-[#5E5E5E]">Email</label>
+                    <div class="p-3 bg-[#F9FAFB] border border-[#E5E7EB] font-medium text-[#1E3A34]">
+                      {{ formattedUserData.email }}
+                    </div>
+                  </div>
+                  
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-[#5E5E5E]">Teléfono</label>
+                    <div class="p-3 bg-[#F9FAFB] border border-[#E5E7EB] font-medium text-[#1E3A34]">
+                      {{ formattedUserData.telefono }}
+                    </div>
+                  </div>
+                  
+                  <div class="space-y-2">
+                    <label class="block text-sm font-medium text-[#5E5E5E]">Miembro desde</label>
+                    <div class="p-3 bg-[#F9FAFB] border border-[#E5E7EB] font-medium text-[#1E3A34]">
+                      {{ formattedUserData.miembroDesde }}
+                    </div>
+                  </div>
+                  
+                  <div class="lg:col-span-2 space-y-2">
+                    <label class="block text-sm font-medium text-[#5E5E5E]">Dirección</label>
+                    <div class="p-3 bg-[#F9FAFB] border border-[#E5E7EB] font-medium text-[#1E3A34]">
+                      {{ formattedUserData.direccion }}
                     </div>
                   </div>
                 </div>
@@ -575,7 +532,11 @@ const showNotification = (message, type = 'success') => {
 
 <style scoped>
 .transition-all {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-colors {
+  transition: color 0.2s, background-color 0.2s;
 }
 
 @keyframes spin {
@@ -584,21 +545,5 @@ const showNotification = (message, type = 'success') => {
 
 .animate-spin {
   animation: spin 1s linear infinite;
-}
-
-.focus\:ring-2:focus {
-  ring-width: 2px;
-}
-
-.focus\:ring-black:focus {
-  ring-color: rgb(0 0 0);
-}
-
-.focus\:border-black:focus {
-  border-color: rgb(0 0 0);
-}
-
-.group:hover .group-hover\:scale-110 {
-  transform: scale(1.1);
 }
 </style>

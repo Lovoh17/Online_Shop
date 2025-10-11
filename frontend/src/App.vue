@@ -1,7 +1,7 @@
 <script setup>
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import Navbar from '@/components/navbar.vue'
+import Navbar from '@/components/Navbar.vue'
 import Footer from '@/components/Foother.vue'
 import { useAuthStore } from '@/stores/auth'
 

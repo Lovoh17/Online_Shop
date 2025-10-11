@@ -52,7 +52,7 @@ class CarritoController {
                             _id: producto._id,
                             nombre: producto.nombre,
                             precio: producto.precio,
-                            imagen: producto.imagen,
+                            imagen: producto.imagenes,
                             descripcion: producto.descripcion
                         },
                         cantidad: cantidad
