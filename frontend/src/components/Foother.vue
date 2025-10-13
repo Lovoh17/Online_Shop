@@ -16,7 +16,7 @@
         <!-- Logo y Descripción -->
         <div class="space-y-4">
           <div class="flex items-center space-x-2">
-            <img src="../assets/logo-Naranja.png" alt="DRIP OUTDOOR" class="min-h-20 min-w-20">
+            <img src="../assets/imagologo.png" alt="DRIP OUTDOOR" class="min-h-20 min-w-20">
             <span class="text-white font-black text-xl tracking-tight">DRIP OUTDOOR</span>
           </div>
           <p class="text-sm text-white/70">

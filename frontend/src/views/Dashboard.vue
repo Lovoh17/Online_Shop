@@ -17,15 +17,15 @@
           Men's
         </a>
         <a 
-          href="#"
+          href="/products-Womans"
           class="text-[#1E3A34] font-semibold text-sm uppercase tracking-wide hover:text-[#C2B280] transition-colors"
         >
           Women's
         </a>
 
         <!-- Logo Centro - Destacado -->
-        <div class="flex items-center justify-center px-12 py-2 border-l border-r border-[#E5E5E5]">
-          <img src="../assets/Gemini_Generated_Image_yjx0cbyjx0cbyjx0-removebg-preview.png" alt="DRIP OUTDOOR" class="h-14 w-14">
+        <div class="flex items-center justify-center px-12 py-2">
+          <img src="../assets/isologo.png" alt="DRIP OUTDOOR" class="h-48 w-40">
         </div>
 
         <a 
@@ -35,7 +35,7 @@
           By Activity
         </a>
         <a 
-          href="#"
+          href="/New-products"
           class="text-[#1E3A34] font-semibold text-sm uppercase tracking-wide hover:text-[#C2B280] transition-colors"
         >
           News
@@ -110,27 +110,31 @@
     <!-- Hero Content -->
     <div class="relative z-20 h-full flex items-center justify-center text-center px-4">
       <div class="max-w-4xl">
-        <h1 class="text-6xl md:text-8xl font-black mb-6 tracking-tight text-white uppercase">
-          Vive la <span class="text-[#C2B280]">Aventura</span>
-        </h1>
-        <p class="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto leading-relaxed">
-          Equipamiento premium para quienes desafían los límites. Donde la naturaleza encuentra su estilo.
-        </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <router-link 
-            to="/products"
-            class="bg-[#C2B280] text-[#1E3A34] font-bold px-8 py-4 text-lg uppercase tracking-wider hover:bg-[#D8C69E] transition-all duration-300 transform hover:scale-105 rounded-lg shadow-lg"
-          >
-            Descubrir Colección
-          </router-link>
-          <a 
-            href="#aventuras"
-            class="border-2 border-white text-white font-bold px-8 py-4 text-lg uppercase tracking-wider hover:bg-white hover:text-[#1E3A34] transition-all duration-300 rounded-lg"
-          >
-            Nuestras Aventuras
-          </a>
-        </div>
-      </div>
+  <h1 class="text-6xl md:text-8xl font-black mb-6 tracking-tight text-white uppercase relative">
+    Vive la 
+    <span class="relative inline-block">
+      <span class="absolute inset-0 text-transparent [-webkit-text-stroke:3px_#C2B280] [text-stroke:3px_#C2B280]">Aventura</span>
+      <span class="text-transparent">Aventura</span>
+    </span>
+  </h1>
+  <p class="text-xl md:text-2xl mb-8 text-white/90 max-w-2xl mx-auto leading-relaxed">
+    Equipamiento premium para quienes desafían los límites. Donde la naturaleza encuentra su estilo.
+  </p>
+  <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+    <router-link 
+      to="/products"
+      class="bg-[#C2B280] text-[#1E3A34] font-bold px-8 py-4 text-lg uppercase tracking-wider hover:bg-[#D8C69E] transition-all duration-300 transform hover:scale-105 rounded-lg shadow-lg"
+    >
+      Descubrir Colección
+    </router-link>
+    <a 
+      href="#aventuras"
+      class="border-2 border-white text-white font-bold px-8 py-4 text-lg uppercase tracking-wider hover:bg-white hover:text-[#1E3A34] transition-all duration-300 rounded-lg"
+    >
+      Nuestras Aventuras
+    </a>
+  </div>
+</div>
     </div>
 
     <!-- Scroll Indicator -->
@@ -151,7 +155,7 @@
         <div class="relative">
           <div class="aspect-square rounded-2xl overflow-hidden shadow-2xl">
             <img 
-              src="../assets/Rafa_Note_20_-_2025-10-11_18.36.54-removebg-preview.png" 
+              src="../assets/logo-borde.png" 
               alt="Identidad DRIP OUTDOOR"
               class="w-full h-full object-cover"
             >
@@ -297,53 +301,134 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-        <!-- Galería -->
-        <div class="grid grid-cols-2 gap-4">
-          <div class="space-y-4">
-            <div class="aspect-square rounded-2xl overflow-hidden">
-              <img src="../assets/brands/envato_video_gen_Oct_11_2025_18_23_35.mp4" alt="Aventura Montaña" class="w-full h-full object-cover hover:scale-110 transition-transform duration-700">
-            </div>
-            <div class="aspect-video rounded-2xl overflow-hidden">
-              <img src="../assets/adventure-2.jpg" alt="Camping" class="w-full h-full object-cover hover:scale-110 transition-transform duration-700">
-            </div>
+  <!-- Galería de Videos -->
+  <div class="grid grid-cols-2 gap-4">
+    <div class="space-y-4">
+      <!-- Video 1 - Cuadrado -->
+      <div class="aspect-square overflow-hidden relative group">
+        <video 
+          autoplay 
+          muted 
+          loop 
+          playsinline
+          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+        >
+          <source src="../assets/brands/escalada.mp4" type="video/mp4">
+          <!-- Fallback si el video no carga -->
+          <div class="absolute inset-0 bg-gradient-to-br from-[#1E3A34] to-[#4F7C63] flex items-center justify-center">
+            <span class="text-white font-semibold">Aventura Montaña</span>
           </div>
-          <div class="space-y-4 pt-8">
-            <div class="aspect-video rounded-2xl overflow-hidden">
-              <img src="../assets/adventure-3.jpg" alt="Escalada" class="w-full h-full object-cover hover:scale-110 transition-transform duration-700">
-            </div>
-            <div class="aspect-square rounded-2xl overflow-hidden">
-              <img src="../assets/adventure-4.jpg" alt="Senderismo" class="w-full h-full object-cover hover:scale-110 transition-transform duration-700">
-            </div>
+        </video>
+        <!-- Overlay hover -->
+        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+          <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
           </div>
-        </div>
-
-        <!-- Contenido -->
-        <div class="space-y-6">
-          <h3 class="text-4xl font-black">Explora. Descubre. <span class="text-[#E57C23]">Vive.</span></h3>
-          <p class="text-lg leading-relaxed text-white/80">
-            Cada producto DRIP OUTDOOR está diseñado para acompañarte en tus aventuras. Desde las montañas más altas hasta los senderos urbanos, nuestra comunidad comparte una pasión común: explorar el mundo con estilo y propósito.
-          </p>
-          
-          <div class="space-y-4">
-            <div class="flex items-center space-x-4">
-              <div class="w-2 h-2 bg-[#C2B280] rounded-full"></div>
-              <span class="font-semibold">Expediciones organizadas</span>
-            </div>
-            <div class="flex items-center space-x-4">
-              <div class="w-2 h-2 bg-[#C2B280] rounded-full"></div>
-              <span class="font-semibold">Comunidad global de aventureros</span>
-            </div>
-            <div class="flex items-center space-x-4">
-              <div class="w-2 h-2 bg-[#C2B280] rounded-full"></div>
-              <span class="font-semibold">Guías y recursos exclusivos</span>
-            </div>
-          </div>
-
-          <button class="bg-[#C2B280] text-[#1E3A34] font-bold px-8 py-4 text-lg uppercase tracking-wider hover:bg-white transition-all duration-300 transform hover:scale-105 rounded-lg">
-            Unirse a la Comunidad
-          </button>
         </div>
       </div>
+      
+      <!-- Video 2 - Horizontal -->
+      <div class="aspect-video overflow-hidden relative group">
+        <video 
+          autoplay 
+          muted 
+          loop 
+          playsinline
+          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+        >
+          <source src="../assets/VIDEO-LOGIN.mp4" type="video/mp4">
+          <div class="absolute inset-0 bg-gradient-to-br from-[#1E3A34] to-[#4F7C63] flex items-center justify-center">
+            <span class="text-white font-semibold">Camping</span>
+          </div>
+        </video>
+        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+          <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="space-y-4 pt-8">
+      <!-- Video 3 - Horizontal -->
+      <div class="aspect-video overflow-hidden relative group">
+        <video 
+          autoplay 
+          muted 
+          loop 
+          playsinline
+          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+        >
+          <source src="../assets/brands/envato_video_gen_Oct_11_2025_18_23_35.mp4" type="video/mp4">
+          <div class="absolute inset-0 bg-gradient-to-br from-[#1E3A34] to-[#4F7C63] flex items-center justify-center">
+            <span class="text-white font-semibold">Escalada</span>
+          </div>
+        </video>
+        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+          <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Video 4 - Cuadrado -->
+      <div class="aspect-square overflow-hidden relative group">
+        <video 
+          autoplay 
+          muted 
+          loop 
+          playsinline
+          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+        >
+          <source src="../assets/brands/envato_video_gen_Oct_11_2025_18_30_38.mp4" type="video/mp4">
+          <div class="absolute inset-0 bg-gradient-to-br from-[#1E3A34] to-[#4F7C63] flex items-center justify-center">
+            <span class="text-white font-semibold">Senderismo</span>
+          </div>
+        </video>
+        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+          <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenido -->
+  <div class="space-y-6">
+    <h3 class="text-4xl font-black">Explora. Descubre. <span class="text-[#E57C23]">Vive.</span></h3>
+    <p class="text-lg leading-relaxed text-white/80">
+      Cada producto DRIP OUTDOOR está diseñado para acompañarte en tus aventuras. Desde las montañas más altas hasta los senderos urbanos, nuestra comunidad comparte una pasión común: explorar el mundo con estilo y propósito.
+    </p>
+    
+    <div class="space-y-4">
+      <div class="flex items-center space-x-4">
+        <div class="w-2 h-2 bg-[#C2B280] rounded-full"></div>
+        <span class="font-semibold">Expediciones organizadas</span>
+      </div>
+      <div class="flex items-center space-x-4">
+        <div class="w-2 h-2 bg-[#C2B280] rounded-full"></div>
+        <span class="font-semibold">Comunidad global de aventureros</span>
+      </div>
+      <div class="flex items-center space-x-4">
+        <div class="w-2 h-2 bg-[#C2B280] rounded-full"></div>
+        <span class="font-semibold">Guías y recursos exclusivos</span>
+      </div>
+    </div>
+
+    <button class="bg-[#C2B280] text-[#1E3A34] font-bold px-8 py-4 text-lg uppercase tracking-wider hover:bg-white transition-all duration-300 transform hover:scale-105 rounded-lg">
+      Unirse a la Comunidad
+    </button>
+  </div>
+</div>
     </div>
   </section>
 
@@ -428,12 +513,12 @@ import { ref } from 'vue';
 
 // Marcas para el carrusel
 const brands = ref([
-  { name: 'Columbia', logo: new URL('../assets/brands/logo_columbia.jpg', import.meta.url).href },
+  { name: 'Columbia', logo: new URL('../assets/brands/lOGO-columbia-fo.png', import.meta.url).href },
   { name: 'The North Face', logo: new URL('../assets/brands/The-North-Face-Logo.png', import.meta.url).href },
-  { name: 'Free Country', logo: new URL('../assets/brands/Free_Country_logoBlack_Logo.jpg', import.meta.url).href },
+  { name: 'Free Country', logo: new URL('../assets/brands/freecountrycom-removebg-preview.png', import.meta.url).href },
   { name: 'Bimimi Bay', logo: new URL('../assets/brands/bimini_bay_logo_1edb5d13-23e4-4ca1-90d9-376fc602add9_140x@2x.avif', import.meta.url).href },
-  { name: 'Patagonia', logo: new URL('../assets/brands/OIP.webp', import.meta.url).href },
-  { name: 'Marmot', logo: new URL('../assets/brands/marmot-logo.jpg', import.meta.url).href },
+  { name: 'Marmot', logo: new URL('../assets/brands/marmot-logo-removebg-preview.png', import.meta.url).href },
+  { name: 'Magellan', logo: new URL('../assets/brands/magellan-outdoors-logo-removebg-preview.png', import.meta.url).href },
 ]);
 
 const handleBrandImageError = (brandName) => {

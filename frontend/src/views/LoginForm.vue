@@ -1,25 +1,35 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-[#F8FAFC] to-[#E2E8F0]">
-    <!-- Header minimalista -->
-    <AuthNavbar />
+  <div class="min-h-screen bg-white relative">
+    <!-- Video de fondo -->
+    <div class="fixed inset-0 z-0">
+      <video 
+        autoplay 
+        muted 
+        loop 
+        playsinline
+        class="w-full h-full object-cover"
+      >
+        <source src="../assets/VIDEO-LOGIN.mp4" type="video/mp4">
+        <!-- Fallback en caso de que el video no cargue -->
+        <div class="absolute inset-0 bg-[#1E3A34]"></div>
+      </video>
+      <!-- Overlay para mejorar legibilidad -->
+      <div class="absolute inset-0 bg-black/40"></div>
+    </div>
 
     <!-- Main Content -->
-    <main class="flex items-center justify-center min-h-[calc(100vh-80px)] py-8 px-4">
+    <main class="relative z-10 flex items-center justify-center min-h-[calc(100vh-80px)] py-8 px-4">
       <div class="w-full max-w-md">
         <!-- Tarjeta de Login -->
-        <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden border border-white/20">
+        <div class="bg-white/95 shadow-lg overflow-hidden border border-white/30 backdrop-blur-sm">
           <!-- Encabezado -->
-          <div class="relative bg-gradient-to-r from-[#1E3A34] to-[#4F7C63] p-8 text-center overflow-hidden">
-            <!-- Patrón decorativo -->
-            <div class="absolute inset-0 opacity-10">
-              <div class="absolute top-4 left-4 w-8 h-8 border-2 border-[#C2B280] rounded-full"></div>
-              <div class="absolute bottom-4 right-4 w-6 h-6 border-2 border-[#C2B280] rounded-full"></div>
-              <div class="absolute top-1/2 left-1/4 w-4 h-4 border border-[#C2B280] rotate-45"></div>
-            </div>
+          <div class="bg-[#1E3A34] p-8 text-center overflow-hidden h-48 relative">
+            <!-- Overlay para el video de fondo visible a través -->
+            <div class="absolute inset-0 bg-[#1E3A34]/90"></div>
             
-            <div class="relative z-10">
+            <div class="relative z-10 h-full flex flex-col items-center justify-center">
               <!-- Logo -->
-              <div class="w-20 h-20 mx-auto mb-4 bg-white/10 rounded-full flex items-center justify-center p-2 border border-white/20">
+              <div class="w-16 h-16 mx-auto mb-4 bg-white/10 flex items-center justify-center p-2 border border-white/20">
                 <div v-if="!logoError" class="w-full h-full flex items-center justify-center">
                   <img 
                     src="../assets/DRIP_Shop_-_2025-10-10_21.11.19-removebg-preview.svg" 
@@ -30,7 +40,7 @@
                 </div>
                 <div v-else class="text-white font-bold text-lg">DO</div>
               </div>
-              <h1 class="text-3xl font-bold text-white tracking-tight mb-2">BIENVENIDO</h1>
+              <h1 class="text-2xl font-bold text-white tracking-tight mb-2">BIENVENIDO</h1>
               <p class="text-[#C2B280] text-sm font-medium">Accede a tu cuenta Drip Outdoor</p>
             </div>
           </div>
@@ -60,7 +70,7 @@
                       :disabled="authStore.isLoading"
                       aria-describedby="email-error"
                       :class="[
-                        'w-full pl-10 pr-4 py-3 text-sm bg-white border-2 rounded-xl transition-all duration-300 placeholder-[#A3A3A3] focus:outline-none focus:ring-2 focus:ring-[#1E3A34]/20',
+                        'w-full pl-10 pr-4 py-3 text-sm bg-white border-2 transition-all duration-300 placeholder-[#A3A3A3] focus:outline-none focus:ring-2 focus:ring-[#1E3A34]/20',
                         errorMessage && errorMessage.includes('email') ? 'border-[#E57C23]' : 'border-[#D8C69E] focus:border-[#1E3A34]',
                         authStore.isLoading ? 'opacity-50 cursor-not-allowed' : ''
                       ]"
@@ -98,7 +108,7 @@
                       :disabled="authStore.isLoading"
                       aria-describedby="password-error"
                       :class="[
-                        'w-full pl-10 pr-4 py-3 text-sm bg-white border-2 rounded-xl transition-all duration-300 placeholder-[#A3A3A3] focus:outline-none focus:ring-2 focus:ring-[#1E3A34]/20',
+                        'w-full pl-10 pr-4 py-3 text-sm bg-white border-2 transition-all duration-300 placeholder-[#A3A3A3] focus:outline-none focus:ring-2 focus:ring-[#1E3A34]/20',
                         errorMessage && errorMessage.includes('contraseña') ? 'border-[#E57C23]' : 'border-[#D8C69E] focus:border-[#1E3A34]',
                         authStore.isLoading ? 'opacity-50 cursor-not-allowed' : ''
                       ]"
@@ -120,7 +130,7 @@
                   >
                   <div 
                     :class="[
-                      'w-5 h-5 bg-white border-2 rounded transition-colors duration-200 flex items-center justify-center cursor-pointer',
+                      'w-5 h-5 bg-white border-2 transition-colors duration-200 flex items-center justify-center cursor-pointer',
                       rememberMe ? 'bg-[#1E3A34] border-[#1E3A34]' : 'border-[#D8C69E]',
                       authStore.isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:border-[#1E3A34]'
                     ]"
@@ -147,7 +157,7 @@
               <div 
                 v-if="errorMessage"
                 id="form-error"
-                class="text-[#E57C23] text-sm text-center py-3 px-4 bg-[#FEF2E8] rounded-xl border border-[#FED7AA] flex items-center justify-center"
+                class="text-[#E57C23] text-sm text-center py-3 px-4 bg-[#FEF2E8] border border-[#FED7AA] flex items-center justify-center"
                 role="alert"
                 aria-live="polite"
               >
@@ -163,7 +173,7 @@
                   type="submit" 
                   :disabled="authStore.isLoading"
                   :class="[
-                    'w-full py-3.5 px-4 text-white font-semibold text-sm rounded-xl transition-all duration-300 shadow-lg flex items-center justify-center',
+                    'w-full py-3.5 px-4 text-white font-semibold text-sm transition-all duration-300 shadow-lg flex items-center justify-center',
                     authStore.isLoading ? 'bg-[#5E5E5E] cursor-not-allowed' : 'bg-[#1E3A34] hover:bg-[#2A4A40] hover:shadow-xl'
                   ]"
                   aria-live="polite"
@@ -188,7 +198,7 @@
                   type="button"
                   :disabled="authStore.isLoading"
                   :class="[
-                    'w-full py-3.5 px-4 bg-transparent border-2 font-semibold text-sm rounded-xl transition-all duration-300 flex items-center justify-center',
+                    'w-full py-3.5 px-4 bg-transparent border-2 font-semibold text-sm transition-all duration-300 flex items-center justify-center',
                     authStore.isLoading ? 'border-[#A3A3A3] text-[#A3A3A3] cursor-not-allowed' : 'border-[#C2B280] text-[#1E3A34] hover:bg-[#C2B280]/10'
                   ]"
                 >
@@ -229,14 +239,26 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
               </router-link>
+              <router-link 
+                to="/privacidad" 
+                :class="[
+                  'inline-flex items-center font-semibold text-sm transition-colors group',
+                  authStore.isLoading ? 'text-[#A3A3A3] pointer-events-none' : 'text-[#1E3A34] hover:text-[#4F7C63]'
+                ]"
+              >
+                Politicas de Privacidad
+                <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </router-link>
             </div>
           </div>
         </div>
 
         <!-- Beneficios -->
         <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div class="bg-white/80 backdrop-blur-sm p-4 text-center rounded-xl border border-white/20 shadow-lg">
-            <div class="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-[#1E3A34] to-[#4F7C63] rounded-full flex items-center justify-center">
+          <div class="bg-white/95 p-4 text-center border border-white/30 shadow-lg backdrop-blur-sm">
+            <div class="w-10 h-10 mx-auto mb-2 bg-[#1E3A34] flex items-center justify-center">
               <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
               </svg>
@@ -245,8 +267,8 @@
             <p class="text-[10px] text-[#5E5E5E]">Desde $50</p>
           </div>
           
-          <div class="bg-white/80 backdrop-blur-sm p-4 text-center rounded-xl border border-white/20 shadow-lg">
-            <div class="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-[#1E3A34] to-[#4F7C63] rounded-full flex items-center justify-center">
+          <div class="bg-white/95 p-4 text-center border border-white/30 shadow-lg backdrop-blur-sm">
+            <div class="w-10 h-10 mx-auto mb-2 bg-[#1E3A34] flex items-center justify-center">
               <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
               </svg>
@@ -255,8 +277,8 @@
             <p class="text-[10px] text-[#5E5E5E]">100% protegido</p>
           </div>
           
-          <div class="bg-white/80 backdrop-blur-sm p-4 text-center rounded-xl border border-white/20 shadow-lg">
-            <div class="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-[#1E3A34] to-[#4F7C63] rounded-full flex items-center justify-center">
+          <div class="bg-white/95 p-4 text-center border border-white/30 shadow-lg backdrop-blur-sm">
+            <div class="w-10 h-10 mx-auto mb-2 bg-[#1E3A34] flex items-center justify-center">
               <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
@@ -271,7 +293,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AuthNavbar from '@/components/AuthNavbar.vue'
@@ -389,7 +411,7 @@ const continueWithoutAccount = () => {
 const showNotification = (message, type = 'success') => {
   const notification = document.createElement('div')
   notification.className = `
-    fixed top-4 right-4 px-6 py-4 rounded-xl shadow-2xl z-50 
+    fixed top-4 right-4 px-6 py-4 shadow-2xl z-50 
     transform translate-x-full transition-transform duration-300
     ${type === 'success' ? 'bg-[#4F7C63] text-white' : 'bg-[#E57C23] text-white'}
   `
@@ -429,10 +451,6 @@ loadSavedPreferences()
 <style scoped>
 .transition-all {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.backdrop-blur-sm {
-  backdrop-filter: blur(4px);
 }
 
 @keyframes spin {

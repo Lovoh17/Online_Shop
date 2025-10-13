@@ -1,4 +1,4 @@
-<!-- MensProducts.vue -->
+<!-- NewProducts.vue -->
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useCartStore } from '@/stores/cart';
@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router';
 
 const productos = ref([]);
-const mensCategories = ref([]);
+const allCategories = ref([]);
 const imageError = ref({});
 const cartStore = useCartStore();
 const authStore = useAuthStore();
@@ -16,7 +16,7 @@ const selectedSize = ref('S');
 const quantity = ref(1);
 
 // Filtros
-const activeCollection = ref('Todos');
+const activeGender = ref('Todos');
 const activeCategory = ref(null);
 const sortOption = ref('Destacados');
 const loading = ref(false);
@@ -25,12 +25,12 @@ const error = ref(null);
 // Quick View
 const quickViewProduct = ref(null);
 
-// Colecciones
-const collections = ref([
+// Géneros
+const genders = ref([
   { name: 'Todos', count: 0 },
-  { name: 'Nuevos', count: 0 },
-  { name: 'Ofertas', count: 0 },
-  { name: 'Más Vendidos', count: 0 }
+  { name: 'Hombre', count: 0 },
+  { name: 'Mujer', count: 0 },
+  { name: 'Unisex', count: 0 }
 ]);
 
 const increaseQuantity = () => {
@@ -48,7 +48,11 @@ const addToCartFromQuickView = async () => {
   closeQuickView();
 };
 
-const cargarProductosHombre = async () => {
+/**
+ * Cargar productos nuevos desde la API
+ * Filtra productos donde nuevo === true
+ */
+const cargarProductosNuevos = async () => {
   try {
     loading.value = true;
     error.value = null;
@@ -68,19 +72,22 @@ const cargarProductosHombre = async () => {
     const allProducts = productsData.productos || [];
     console.log('Total productos recibidos:', allProducts.length);
     
-    const productosHombre = allProducts.filter(producto => {
-      return producto.genero && producto.genero.toLowerCase() === 'hombre';
+    // Filtrar SOLO productos con nuevo === true
+    const productosNuevos = allProducts.filter(producto => {
+      return producto.nuevo === true;
     });
     
-    console.log('Productos de hombre filtrados:', productosHombre.length);
+    console.log('Productos nuevos filtrados:', productosNuevos.length);
     
+    // Extraer categorías únicas
     const categoriasUnicas = new Set();
-    productosHombre.forEach(producto => {
+    productosNuevos.forEach(producto => {
       if (producto.categoria) {
         categoriasUnicas.add(producto.categoria);
       }
     });
     
+    // Obtener información de categorías
     const categoriesRes = await fetch("http://localhost:4000/api/categorias");
     
     if (categoriesRes.ok) {
@@ -89,18 +96,19 @@ const cargarProductosHombre = async () => {
       if (categoriesData.success) {
         const todasLasCategorias = categoriesData.categorias || [];
         
-        mensCategories.value = todasLasCategorias.filter(cat => 
+        allCategories.value = todasLasCategorias.filter(cat => 
           categoriasUnicas.has(cat.nombre) || categoriasUnicas.has(cat._id)
         );
         
-        console.log('Categorías de hombre disponibles:', mensCategories.value.length);
+        console.log('Categorías disponibles:', allCategories.value.length);
       }
     }
     
-    if (mensCategories.value.length === 0) {
+    // Crear categorías desde productos si no hay
+    if (allCategories.value.length === 0) {
       const categoriasMap = new Map();
       
-      productosHombre.forEach(producto => {
+      productosNuevos.forEach(producto => {
         if (producto.categoria && !categoriasMap.has(producto.categoria)) {
           categoriasMap.set(producto.categoria, {
             _id: producto.categoria,
@@ -110,12 +118,13 @@ const cargarProductosHombre = async () => {
         }
       });
       
-      mensCategories.value = Array.from(categoriasMap.values());
+      allCategories.value = Array.from(categoriasMap.values());
     }
     
-    productos.value = productosHombre
+    // Procesar productos
+    productos.value = productosNuevos
       .map(producto => {
-        const categoriaObj = mensCategories.value.find(cat => 
+        const categoriaObj = allCategories.value.find(cat => 
           cat._id === producto.categoria || cat.nombre === producto.categoria
         );
         
@@ -127,40 +136,39 @@ const cargarProductosHombre = async () => {
           precioOriginal: producto.precioOriginal ? parseFloat(producto.precioOriginal) : null,
           categoria: producto.categoria,
           categoriaNombre: categoriaObj?.nombre || producto.categoria || 'Sin categoría',
-          rating: producto.rating || (Math.random() * 1 + 4).toFixed(1),
+          rating: producto.rating || producto.valoracion || (Math.random() * 1 + 4).toFixed(1),
           descuento: producto.descuento || 0,
-          nuevo: producto.nuevo || isNuevoProducto(producto),
+          nuevo: true,
           stock: producto.stock || 0,
-          enStock: (producto.stock || 0) > 0
+          enStock: (producto.stock || 0) > 0,
+          genero: producto.genero || 'Unisex'
         };
       })
       .filter(producto => producto.enStock);
     
     console.log('Productos procesados:', productos.value.length);
     
-    updateCollectionCounts();
+    updateGenderCounts();
     
   } catch (err) {
-    console.error("Error al cargar productos de hombre:", err);
+    console.error("Error al cargar productos nuevos:", err);
     error.value = err.message || 'Error al cargar los productos';
   } finally {
     loading.value = false;
   }
 };
 
-const isNuevoProducto = (producto) => {
-  if (!producto.createdAt && !producto.fechaCreacion) return false;
-  
-  const fechaCreacion = new Date(producto.createdAt || producto.fechaCreacion);
-  const ahora = new Date();
-  const diasDiferencia = (ahora - fechaCreacion) / (1000 * 60 * 60 * 24);
-  
-  return diasDiferencia <= 30;
-};
-
 const filteredProducts = computed(() => {
   let result = [...productos.value];
   
+  // Filtrar por género
+  if (activeGender.value !== 'Todos') {
+    result = result.filter(p => 
+      p.genero && p.genero.toLowerCase() === activeGender.value.toLowerCase()
+    );
+  }
+  
+  // Filtrar por categoría
   if (activeCategory.value) {
     result = result.filter(p => 
       p.categoria === activeCategory.value._id || 
@@ -169,16 +177,7 @@ const filteredProducts = computed(() => {
     );
   }
   
-  if (activeCollection.value !== 'Todos') {
-    if (activeCollection.value === 'Nuevos') {
-      result = result.filter(p => p.nuevo);
-    } else if (activeCollection.value === 'Ofertas') {
-      result = result.filter(p => p.descuento > 0);
-    } else if (activeCollection.value === 'Más Vendidos') {
-      result = result.filter(p => parseFloat(p.rating) >= 4.5);
-    }
-  }
-  
+  // Ordenar
   switch (sortOption.value) {
     case 'Precio: menor a mayor':
       result.sort((a, b) => a.precio - b.precio);
@@ -186,7 +185,7 @@ const filteredProducts = computed(() => {
     case 'Precio: mayor a menor':
       result.sort((a, b) => b.precio - a.precio);
       break;
-    case 'Más nuevos':
+    case 'Más recientes':
       result.sort((a, b) => {
         const dateA = new Date(b.createdAt || b.fechaCreacion || 0);
         const dateB = new Date(a.createdAt || a.fechaCreacion || 0);
@@ -198,9 +197,9 @@ const filteredProducts = computed(() => {
       break;
     default:
       result.sort((a, b) => {
-        const scoreA = parseFloat(a.rating || 0) * (a.nuevo ? 1.2 : 1);
-        const scoreB = parseFloat(b.rating || 0) * (b.nuevo ? 1.2 : 1);
-        return scoreB - scoreA;
+        const dateA = new Date(b.createdAt || b.fechaCreacion || 0);
+        const dateB = new Date(a.createdAt || a.fechaCreacion || 0);
+        return dateB - dateA;
       });
       break;
   }
@@ -208,16 +207,16 @@ const filteredProducts = computed(() => {
   return result;
 });
 
-const setActiveCollection = (collection) => {
-  activeCollection.value = collection;
+const setActiveGender = (gender) => {
+  activeGender.value = gender;
 };
 
 const setActiveCategory = (category) => {
   activeCategory.value = category;
 };
 
-const clearCollection = () => {
-  activeCollection.value = 'Todos';
+const clearGender = () => {
+  activeGender.value = 'Todos';
 };
 
 const clearCategory = () => {
@@ -225,12 +224,12 @@ const clearCategory = () => {
 };
 
 const resetFilters = () => {
-  activeCollection.value = 'Todos';
+  activeGender.value = 'Todos';
   activeCategory.value = null;
   sortOption.value = 'Destacados';
 };
 
-const getCollectionCount = (collectionName) => {
+const getGenderCount = (genderName) => {
   let products = [...productos.value];
   
   if (activeCategory.value) {
@@ -241,24 +240,28 @@ const getCollectionCount = (collectionName) => {
     );
   }
   
-  if (collectionName === 'Todos') return products.length;
-  if (collectionName === 'Nuevos') return products.filter(p => p.nuevo).length;
-  if (collectionName === 'Ofertas') return products.filter(p => p.descuento > 0).length;
-  if (collectionName === 'Más Vendidos') return products.filter(p => parseFloat(p.rating) >= 4.5).length;
-  
-  return 0;
+  if (genderName === 'Todos') return products.length;
+  return products.filter(p => p.genero && p.genero.toLowerCase() === genderName.toLowerCase()).length;
 };
 
 const getCategoryProductCount = (categoriaId) => {
-  return productos.value.filter(p => 
+  let products = productos.value;
+  
+  if (activeGender.value !== 'Todos') {
+    products = products.filter(p => 
+      p.genero && p.genero.toLowerCase() === activeGender.value.toLowerCase()
+    );
+  }
+  
+  return products.filter(p => 
     p.categoria === categoriaId || p.categoriaNombre === categoriaId
   ).length;
 };
 
-const updateCollectionCounts = () => {
-  collections.value = collections.value.map(collection => ({
-    ...collection,
-    count: getCollectionCount(collection.name)
+const updateGenderCounts = () => {
+  genders.value = genders.value.map(gender => ({
+    ...gender,
+    count: getGenderCount(gender.name)
   }));
 };
 
@@ -327,49 +330,59 @@ const mostrarNotificacion = (mensaje, tipo = 'success') => {
 };
 
 onMounted(() => {
-  cargarProductosHombre();
+  cargarProductosNuevos();
 });
 </script>
 
 <template>
   <div class="min-h-screen bg-white">
-    <!-- Hero Section -->
-    <section class="relative overflow-hidden h-[550px]">
-      <div class="absolute inset-0">
+    <section class="relative overflow-hidden h-[550px] ">
+      <div class="absolute inset-0 ">
+        <div class="absolute inset-0">
         <img 
-          src="../assets/mens.jpg" 
-          alt="Men's Collection Banner"
+          src="../assets/new2.png" 
+          alt="Mujer" 
           class="w-full h-full object-cover"
         />
-        <div class="absolute inset-0 bg-gradient-to-r from-[#1E3A34]/80 via-[#1E3A34]/60 to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-[#1E3A34]/90 via-[#1E3A34]/70 to-[#1E3A34]/50"></div>
+      </div>
       </div>
       
       <div class="relative z-10 h-full flex items-center">
         <div class="container mx-auto px-4 md:px-8">
-          <div class="max-w-2xl">
+          <div class="max-w-3xl">
+            <!-- Badge -->
+            <div class="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20 mb-6">
+              <svg class="h-5 w-5 text-[#D8C69E]" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+              <span class="text-white text-sm font-semibold tracking-wide">NUEVOS INGRESOS</span>
+            </div>
+            
+            <!-- Breadcrumb -->
             <div class="flex items-center space-x-2 text-sm text-white/80 mb-4">
               <router-link to="/" class="hover:text-white transition-colors">Collections</router-link>
               <span>/</span>
-              <span class="text-white font-semibold">Men's</span>
+              <span class="text-white font-semibold">New Arrivals</span>
             </div>
             
             <h1 class="text-6xl md:text-8xl font-black mb-6 tracking-tight text-white leading-none">
-              MEN'S
+              NEW<br>ARRIVALS
             </h1>
             
             <p class="text-xl md:text-2xl text-[#D8C69E] font-light mb-4">
-              Colección exclusiva para hombres
+              Los últimos productos que acabamos de recibir
             </p>
             <p class="text-sm text-white/70">
-              {{ productos.length }} productos disponibles
+              {{ productos.length }} productos nuevos disponibles
             </p>
           </div>
         </div>
       </div>
       
-      <div class="absolute left-8 top-1/2 transform -translate-y-1/2 -rotate-90 origin-left hidden lg:block">
+      <div class="absolute right-8 top-1/2 transform -translate-y-1/2 rotate-90 origin-right hidden lg:block">
         <div class="bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full border border-white/20">
-          <span class="text-white text-sm font-bold tracking-widest">WHAT'S FISHING TRIP</span>
+          <span class="text-white text-sm font-bold tracking-widest">LATEST COLLECTION 2025</span>
         </div>
       </div>
     </section>
@@ -377,181 +390,179 @@ onMounted(() => {
     <!-- Main Content -->
     <div class="container mx-auto px-4 py-8">
       <!-- Filtros Horizontales Mejorados -->
-<div class="bg-white rounded-xl shadow-sm border border-[#D8C69E] mb-8">
-  <div class="p-6">
-    <!-- Header de Filtros -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-      <div>
-        <h2 class="text-lg font-black text-[#1E3A34] tracking-tight">FILTROS</h2>
-        <p class="text-sm text-gray-600 mt-1">
-          {{ filteredProducts.length }} productos encontrados
-        </p>
-      </div>
-      
-      <!-- Ordenar por -->
-      <div class="flex items-center gap-3">
-        <span class="text-sm font-semibold text-[#1E3A34] whitespace-nowrap">Ordenar por:</span>
-        <select 
-          v-model="sortOption"
-          class="px-4 py-2.5 border-2 border-[#D8C69E] rounded-lg text-sm focus:outline-none focus:border-[#1E3A34] transition-colors bg-white min-w-[180px]"
-        >
-          <option>Destacados</option>
-          <option>Más nuevos</option>
-          <option>Precio: menor a mayor</option>
-          <option>Precio: mayor a menor</option>
-          <option>Mejor valorados</option>
-        </select>
-      </div>
-    </div>
+      <div class="bg-white rounded-xl shadow-sm border border-[#D8C69E] mb-8">
+        <div class="p-6">
+          <!-- Header de Filtros -->
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-lg font-black text-[#1E3A34] tracking-tight">FILTROS</h2>
+              <p class="text-sm text-gray-600 mt-1">
+                {{ filteredProducts.length }} productos encontrados
+              </p>
+            </div>
+            
+            <!-- Ordenar por -->
+            <div class="flex items-center gap-3">
+              <span class="text-sm font-semibold text-[#1E3A34] whitespace-nowrap">Ordenar por:</span>
+              <select 
+                v-model="sortOption"
+                class="px-4 py-2.5 border-2 border-[#D8C69E] rounded-lg text-sm focus:outline-none focus:border-[#1E3A34] transition-colors bg-white min-w-[180px]"
+              >
+                <option>Destacados</option>
+                <option>Más recientes</option>
+                <option>Precio: menor a mayor</option>
+                <option>Precio: mayor a menor</option>
+                <option>Mejor valorados</option>
+              </select>
+            </div>
+          </div>
 
-    <!-- Filtros Activos -->
-    <div v-if="activeCollection !== 'Todos' || activeCategory" class="flex flex-wrap gap-2 mb-6 p-4 bg-[#F8F6F0] rounded-lg border border-[#D8C69E]">
-      <span class="text-sm font-semibold text-[#1E3A34] mr-2">Filtros activos:</span>
-      <span 
-        v-if="activeCollection !== 'Todos'"
-        class="bg-[#1E3A34] text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2"
-      >
-        {{ activeCollection }}
-        <button @click="clearCollection" class="hover:text-[#D8C69E] transition-colors">
-          <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </span>
-      <span 
-        v-if="activeCategory"
-        class="bg-[#1E3A34] text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2"
-      >
-        {{ activeCategory.nombre }}
-        <button @click="clearCategory" class="hover:text-[#D8C69E] transition-colors">
-          <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </span>
-      <button 
-        v-if="activeCollection !== 'Todos' || activeCategory"
-        @click="resetFilters"
-        class="text-xs text-gray-600 hover:text-[#1E3A34] transition-colors ml-2 flex items-center gap-1"
-      >
-        <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-        </svg>
-        Limpiar todos
-      </button>
-    </div>
-
-    <!-- Categorías y Colecciones en Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Categorías -->
-      <div>
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-bold text-[#1E3A34] uppercase tracking-wide flex items-center gap-2">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            Categorías
-          </h3>
-          <button 
-            v-if="activeCategory"
-            @click="clearCategory"
-            class="text-xs text-gray-500 hover:text-[#1E3A34] transition-colors flex items-center gap-1"
-          >
-            Limpiar
-            <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <div v-if="loading && mensCategories.length === 0" class="text-center py-4">
-          <div class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-[#D8C69E] border-t-[#1E3A34]"></div>
-        </div>
-        
-        <div v-else class="flex flex-wrap gap-2">
-          <button
-            v-for="category in mensCategories"
-            :key="category._id"
-            @click="setActiveCategory(category)"
-            :class="{
-              'px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 border-2 flex items-center gap-2': true,
-              'bg-[#1E3A34] border-[#1E3A34] text-white shadow-md hover:shadow-lg': activeCategory?._id === category._id || activeCategory?.nombre === category.nombre,
-              'bg-white border-[#D8C69E] text-[#1E3A34] hover:bg-[#F8F6F0] hover:border-[#1E3A34]': activeCategory?._id !== category._id && activeCategory?.nombre !== category.nombre
-            }"
-          >
-            <span>{{ category.nombre.replace(' Mujer', '').replace('Mujer', '').trim() }}</span>
-            <span class="text-xs opacity-75 bg-white/20 px-1.5 py-0.5 rounded-full">
-              {{ getCategoryProductCount(category._id || category.nombre) }}
+          <!-- Filtros Activos -->
+          <div v-if="activeGender !== 'Todos' || activeCategory" class="flex flex-wrap gap-2 mb-6 p-4 bg-[#F8F6F0] rounded-lg border border-[#D8C69E]">
+            <span class="text-sm font-semibold text-[#1E3A34] mr-2">Filtros activos:</span>
+            <span 
+              v-if="activeGender !== 'Todos'"
+              class="bg-[#1E3A34] text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2"
+            >
+              {{ activeGender }}
+              <button @click="clearGender" class="hover:text-[#D8C69E] transition-colors">
+                <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Colecciones -->
-      <div>
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-bold text-[#1E3A34] uppercase tracking-wide flex items-center gap-2">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-            </svg>
-            Colecciones
-          </h3>
-          <button 
-            v-if="activeCollection !== 'Todos'"
-            @click="clearCollection"
-            class="text-xs text-gray-500 hover:text-[#1E3A34] transition-colors flex items-center gap-1"
-          >
-            Limpiar
-            <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <div class="flex flex-wrap gap-2">
-          <button
-            v-for="collection in collections"
-            :key="collection.name"
-            @click="setActiveCollection(collection.name)"
-            :class="{
-              'px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 border-2 flex items-center gap-2': true,
-              'bg-[#1E3A34] border-[#1E3A34] text-white shadow-md hover:shadow-lg': activeCollection === collection.name,
-              'bg-white border-[#D8C69E] text-[#1E3A34] hover:bg-[#F8F6F0] hover:border-[#1E3A34]': activeCollection !== collection.name
-            }"
-          >
-            <span>{{ collection.name }}</span>
-            <span class="text-xs opacity-75 bg-white/20 px-1.5 py-0.5 rounded-full">
-              {{ collection.count }}
+            <span 
+              v-if="activeCategory"
+              class="bg-[#1E3A34] text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2"
+            >
+              {{ activeCategory.nombre }}
+              <button @click="clearCategory" class="hover:text-[#D8C69E] transition-colors">
+                <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </span>
-          </button>
+            <button 
+              v-if="activeGender !== 'Todos' || activeCategory"
+              @click="resetFilters"
+              class="text-xs text-gray-600 hover:text-[#1E3A34] transition-colors ml-2 flex items-center gap-1"
+            >
+              <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+              Limpiar todos
+            </button>
+          </div>
+
+          <!-- Géneros y Categorías en Grid -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Géneros -->
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-bold text-[#1E3A34] uppercase tracking-wide flex items-center gap-2">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                  </svg>
+                  Géneros
+                </h3>
+                <button 
+                  v-if="activeGender !== 'Todos'"
+                  @click="clearGender"
+                  class="text-xs text-gray-500 hover:text-[#1E3A34] transition-colors flex items-center gap-1"
+                >
+                  Limpiar
+                  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="gender in genders"
+                  :key="gender.name"
+                  @click="setActiveGender(gender.name)"
+                  :class="{
+                    'px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 border-2 flex items-center gap-2': true,
+                    'bg-[#1E3A34] border-[#1E3A34] text-white shadow-md hover:shadow-lg': activeGender === gender.name,
+                    'bg-white border-[#D8C69E] text-[#1E3A34] hover:bg-[#F8F6F0] hover:border-[#1E3A34]': activeGender !== gender.name
+                  }"
+                >
+                  <span>{{ gender.name }}</span>
+                  <span class="text-xs opacity-75 bg-white/20 px-1.5 py-0.5 rounded-full">
+                    {{ gender.count }}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Categorías -->
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-bold text-[#1E3A34] uppercase tracking-wide flex items-center gap-2">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  Categorías
+                </h3>
+                <button 
+                  v-if="activeCategory"
+                  @click="clearCategory"
+                  class="text-xs text-gray-500 hover:text-[#1E3A34] transition-colors flex items-center gap-1"
+                >
+                  Limpiar
+                  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div v-if="loading && allCategories.length === 0" class="text-center py-4">
+                <div class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-[#D8C69E] border-t-[#1E3A34]"></div>
+              </div>
+              
+              <div v-else class="flex flex-wrap gap-2">
+                <button
+                  v-for="category in allCategories"
+                  :key="category._id"
+                  @click="setActiveCategory(category)"
+                  :class="{
+                    'px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 border-2 flex items-center gap-2': true,
+                    'bg-[#1E3A34] border-[#1E3A34] text-white shadow-md hover:shadow-lg': activeCategory?._id === category._id || activeCategory?.nombre === category.nombre,
+                    'bg-white border-[#D8C69E] text-[#1E3A34] hover:bg-[#F8F6F0] hover:border-[#1E3A34]': activeCategory?._id !== category._id && activeCategory?.nombre !== category.nombre
+                  }"
+                >
+                  <span>{{ category.nombre }}</span>
+                  <span class="text-xs opacity-75 bg-white/20 px-1.5 py-0.5 rounded-full">
+                    {{ getCategoryProductCount(category._id || category.nombre) }}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
-</div>
-
+        
       <div class="flex flex-col lg:flex-row gap-8">
-        
-
         <!-- Products Grid -->
         <div class="lg:w-full">
           <!-- Loading State -->
           <div v-if="loading" class="text-center py-12">
             <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#D8C69E] border-t-[#1E3A34]"></div>
-            <p class="mt-4 text-gray-600">Cargando productos...</p>
+            <p class="mt-4 text-gray-600">Cargando productos nuevos...</p>
           </div>
 
           <!-- Error State -->
           <div v-else-if="error" class="text-center py-12">
             <p class="text-red-500 mb-4">{{ error }}</p>
-            <button @click="cargarProductosHombre" class="bg-[#1E3A34] text-white px-6 py-2 rounded-lg">
+            <button @click="cargarProductosNuevos" class="bg-[#1E3A34] text-white px-6 py-2 rounded-lg">
               Reintentar
             </button>
           </div>
 
           <!-- Empty State -->
           <div v-else-if="filteredProducts.length === 0" class="text-center py-12">
-            <p class="text-gray-600 mb-4">No se encontraron productos</p>
+            <p class="text-gray-600 mb-4">No se encontraron productos nuevos</p>
             <button @click="resetFilters" class="text-[#1E3A34] underline">
               Limpiar filtros
             </button>
@@ -598,16 +609,13 @@ onMounted(() => {
                   </svg>
                 </button>
                 
-                <!-- Badges -->
+                <!-- NEW Badge -->
                 <div class="absolute top-3 left-3 flex flex-col space-y-2">
-                  <span 
-                    v-if="producto.nuevo"
-                    class="bg-[#1E3A34] text-white text-xs px-2 py-1 font-bold rounded"
-                  >
-                    NUEVO
+                  <span class="bg-gradient-to-r from-[#D8C69E] to-[#C5B38E] text-[#1E3A34] text-xs px-3 py-1.5 font-black rounded shadow-md">
+                    NEW
                   </span>
                   <span 
-                    v-if="producto.descuento"
+                    v-if="producto.descuento > 0"
                     class="bg-[#E57C23] text-white text-xs px-2 py-1 font-bold rounded"
                   >
                     -{{ producto.descuento }}%
@@ -686,16 +694,13 @@ onMounted(() => {
                       <span class="text-gray-600">Sin imagen</span>
                     </div>
                     
-                    <!-- Badges -->
+                    <!-- NEW Badge -->
                     <div class="absolute top-4 left-4 flex flex-col space-y-2">
-                      <span 
-                        v-if="quickViewProduct.nuevo"
-                        class="bg-[#1E3A34] text-white text-xs px-3 py-1 font-bold"
-                      >
-                        NUEVO
+                      <span class="bg-gradient-to-r from-[#D8C69E] to-[#C5B38E] text-[#1E3A34] text-xs px-3 py-1.5 font-black rounded shadow-md">
+                        NEW
                       </span>
                       <span 
-                        v-if="quickViewProduct.descuento"
+                        v-if="quickViewProduct.descuento > 0"
                         class="bg-[#E57C23] text-white text-xs px-3 py-1 font-bold"
                       >
                         -{{ quickViewProduct.descuento }}%

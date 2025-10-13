@@ -38,6 +38,42 @@ const routes = [
         meta: { public: true, title: 'Productos de Hombres - DRIP Outdoor' }
     },
     {
+        path: '/products-Womans',
+        name: 'productos Mujeres',
+        component: () => import('@/views/WomensProducts.vue'),
+        meta: { public: true, title: 'Productos de Mujeres - DRIP Outdoor' }
+    },
+    {
+        path: '/New-products',
+        name: 'productos Nuevos',
+        component: () => import('@/views/NewProducts.vue'),
+        meta: { public: true, title: 'Productos Nuevos - DRIP Outdoor' }
+    },
+    {
+        path: '/privacity',
+        name: 'Privacidad',
+        component: () => import('@/views/PrivacyPolicy.vue'),
+        meta: { public: true, title: 'Politicas de Privacidad - DRIP Outdoor' }
+    },
+    {
+        path: '/devoluciones',
+        name: 'Devoluciones',
+        component: () => import('@/views/Devoluciones.vue'),
+        meta: { public: true, title: 'Politicas de Devolucion - DRIP Outdoor' }
+    },
+    {
+        path: '/Kids-products',
+        name: 'productos de Niños',
+        component: () => import('@/views/KidsProducts.vue'),
+        meta: { public: true, title: 'Productos de Niños - DRIP Outdoor' }
+    },
+    {
+        path: '/Accesories-products',
+        name: 'Accesorios',
+        component: () => import('@/views/AccessoriesView.vue'),
+        meta: { public: true, title: 'Accesorios - DRIP Outdoor' }
+    },
+    {
         path: '/productos/categoria/:categoria',
         name: 'productosCategoria',
         component: () => import('@/views/Productos.vue'),

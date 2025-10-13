@@ -5,14 +5,23 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
-
-// Inicialización de la app
 const app = createApp(App)
 const pinia = createPinia()
 
-// Orden recomendado para plugins
-app.use(pinia) // 1. Pinia (gestión de estado)
-app.use(router) // 2. Router
+app.use(pinia)
+app.use(router)
 
-// Montaje final
 app.mount('#app')
+
+
+if (cookiePreferences.analytics) {
+  const script = document.createElement('script');
+  script.src = 'https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX';
+  script.async = true;
+  document.head.appendChild(script);
+
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+}

@@ -19,7 +19,7 @@
         <!-- Navigation Links -->
         <div class="hidden lg:flex items-center space-x-8" style="margin-left: 10px;">
           <router-link 
-            to="/productos?etiqueta=nuevo" 
+            to="/New-products" 
             class="font-semibold text-[#1E3A34] hover:text-[#4F7C63] transition-colors text-sm uppercase tracking-wide"
           >
             Nuevo
@@ -36,31 +36,31 @@
             <div class="absolute top-full left-0 mt-2 w-48 bg-white border border-[#D8C69E] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
               <div class="py-2">
                 <router-link 
-                  to="/productos/categoria/Camisas Hombre" 
+                  to="/products-Mens" 
                   class="block px-4 py-2 text-sm text-[#5E5E5E] hover:bg-[#F5F5F5] hover:text-[#1E3A34]"
                 >
                   Camisas
                 </router-link>
                 <router-link 
-                  to="/productos/categoria/Chaquetas Hombre" 
+                  to="/products-Mens" 
                   class="block px-4 py-2 text-sm text-[#5E5E5E] hover:bg-[#F5F5F5] hover:text-[#1E3A34]"
                 >
                   Chaquetas
                 </router-link>
                 <router-link 
-                  to="/productos/categoria/Pantalones Hombre" 
+                  to="/products-Mens" 
                   class="block px-4 py-2 text-sm text-[#5E5E5E] hover:bg-[#F5F5F5] hover:text-[#1E3A34]"
                 >
                   Pantalones
                 </router-link>
                 <router-link 
-                  to="/productos/categoria/Calzado Hombre" 
+                  to="/products-Mens" 
                   class="block px-4 py-2 text-sm text-[#5E5E5E] hover:bg-[#F5F5F5] hover:text-[#1E3A34]"
                 >
                   Calzado
                 </router-link>
                 <router-link 
-                  to="/productos/categoria/Accesorios Hombre" 
+                  to="/products-Mens" 
                   class="block px-4 py-2 text-sm text-[#5E5E5E] hover:bg-[#F5F5F5] hover:text-[#1E3A34]"
                 >
                   Accesorios
@@ -80,31 +80,31 @@
             <div class="absolute top-full left-0 mt-2 w-48 bg-white border border-[#D8C69E] rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
               <div class="py-2">
                 <router-link 
-                  to="/productos/categoria/Camisas Mujer" 
+                  to="/products-Womans" 
                   class="block px-4 py-2 text-sm text-[#5E5E5E] hover:bg-[#F5F5F5] hover:text-[#1E3A34]"
                 >
                   Camisas
                 </router-link>
                 <router-link 
-                  to="/productos/categoria/Chaquetas Mujer" 
+                  to="/products-Womans" 
                   class="block px-4 py-2 text-sm text-[#5E5E5E] hover:bg-[#F5F5F5] hover:text-[#1E3A34]"
                 >
                   Chaquetas
                 </router-link>
                 <router-link 
-                  to="/productos/categoria/Pantalones Mujer" 
+                  to="/products-Womans" 
                   class="block px-4 py-2 text-sm text-[#5E5E5E] hover:bg-[#F5F5F5] hover:text-[#1E3A34]"
                 >
                   Pantalones
                 </router-link>
                 <router-link 
-                  to="/productos/categoria/Calzado Mujer" 
+                  to="/products-Womans" 
                   class="block px-4 py-2 text-sm text-[#5E5E5E] hover:bg-[#F5F5F5] hover:text-[#1E3A34]"
                 >
                   Calzado
                 </router-link>
                 <router-link 
-                  to="/productos/categoria/Accesorios Mujer" 
+                  to="/products-Womans" 
                   class="block px-4 py-2 text-sm text-[#5E5E5E] hover:bg-[#F5F5F5] hover:text-[#1E3A34]"
                 >
                   Accesorios
@@ -114,13 +114,13 @@
           </div>
           
           <router-link 
-            to="/productos?genero=ninos" 
+            to="/Kids-products" 
             class="font-semibold text-[#1E3A34] hover:text-[#4F7C63] transition-colors text-sm uppercase tracking-wide"
           >
             Niños
           </router-link>
           <router-link 
-            to="/productos?etiqueta=equipamiento" 
+            to="/Accesories-products" 
             class="font-semibold text-[#1E3A34] hover:text-[#4F7C63] transition-colors text-sm uppercase tracking-wide"
           >
             Equipamiento
@@ -131,22 +131,6 @@
           >
             Ofertas
           </router-link>
-        </div>
-
-        <!-- Search Bar -->
-        <div class="hidden md:flex flex-1 max-w-lg mx-8">
-          <div class="relative w-full">
-            <input 
-              v-model="searchQuery"
-              @keyup.enter="handleSearch"
-              type="text" 
-              placeholder="Buscar productos..." 
-              class="w-full pl-10 pr-4 py-2 bg-[#F5F5F5] border border-[#D8C69E] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E3A34] focus:border-[#1E3A34] text-sm"
-            >
-            <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#5E5E5E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
         </div>
 
         <!-- User Actions -->
@@ -214,7 +198,7 @@
       <div class="container mx-auto px-4 py-4">
         <div class="space-y-4">
           <router-link 
-            to="/productos?etiqueta=nuevo" 
+            to="/New-products" 
             @click="closeMobileMenu"
             class="block font-semibold text-[#1E3A34] hover:text-[#4F7C63] transition-colors text-sm uppercase tracking-wide"
           >
@@ -240,35 +224,35 @@
             </button>
             <div v-if="mobileCategoryOpen === 'hombres'" class="mt-2 ml-4 space-y-2">
               <router-link 
-                to="/productos/categoria/Camisas Hombre" 
+                to="/products-Mens" 
                 @click="closeMobileMenu"
                 class="block text-sm text-[#5E5E5E] hover:text-[#1E3A34]"
               >
                 Camisas
               </router-link>
               <router-link 
-                to="/productos/categoria/Chaquetas Hombre" 
+                to="/products-Mens" 
                 @click="closeMobileMenu"
                 class="block text-sm text-[#5E5E5E] hover:text-[#1E3A34]"
               >
                 Chaquetas
               </router-link>
               <router-link 
-                to="/productos/categoria/Pantalones Hombre" 
+                to="/products-Mens" 
                 @click="closeMobileMenu"
                 class="block text-sm text-[#5E5E5E] hover:text-[#1E3A34]"
               >
                 Pantalones
               </router-link>
               <router-link 
-                to="/productos/categoria/Calzado Hombre" 
+                to="/products-Mens" 
                 @click="closeMobileMenu"
                 class="block text-sm text-[#5E5E5E] hover:text-[#1E3A34]"
               >
                 Calzado
               </router-link>
               <router-link 
-                to="/productos/categoria/Accesorios Hombre" 
+                to="/products-Mens" 
                 @click="closeMobileMenu"
                 class="block text-sm text-[#5E5E5E] hover:text-[#1E3A34]"
               >
@@ -296,35 +280,35 @@
             </button>
             <div v-if="mobileCategoryOpen === 'mujeres'" class="mt-2 ml-4 space-y-2">
               <router-link 
-                to="/productos/categoria/Camisas Mujer" 
+                to="/products-Womans" 
                 @click="closeMobileMenu"
                 class="block text-sm text-[#5E5E5E] hover:text-[#1E3A34]"
               >
                 Camisas
               </router-link>
               <router-link 
-                to="/productos/categoria/Chaquetas Mujer" 
+                to="/products-Womans" 
                 @click="closeMobileMenu"
                 class="block text-sm text-[#5E5E5E] hover:text-[#1E3A34]"
               >
                 Chaquetas
               </router-link>
               <router-link 
-                to="/productos/categoria/Pantalones Mujer" 
+                to="/products-Womans" 
                 @click="closeMobileMenu"
                 class="block text-sm text-[#5E5E5E] hover:text-[#1E3A34]"
               >
                 Pantalones
               </router-link>
               <router-link 
-                to="/productos/categoria/Calzado Mujer" 
+                to="/products-Womans" 
                 @click="closeMobileMenu"
                 class="block text-sm text-[#5E5E5E] hover:text-[#1E3A34]"
               >
                 Calzado
               </router-link>
               <router-link 
-                to="/productos/categoria/Accesorios Mujer" 
+                to="/products-Womans" 
                 @click="closeMobileMenu"
                 class="block text-sm text-[#5E5E5E] hover:text-[#1E3A34]"
               >
@@ -334,14 +318,14 @@
           </div>
 
           <router-link 
-            to="/productos?genero=ninos" 
+            to="/Kids-products" 
             @click="closeMobileMenu"
             class="block font-semibold text-[#1E3A34] hover:text-[#4F7C63] transition-colors text-sm uppercase tracking-wide"
           >
             Niños
           </router-link>
           <router-link 
-            to="/productos?etiqueta=equipamiento" 
+            to="/Accesories-products" 
             @click="closeMobileMenu"
             class="block font-semibold text-[#1E3A34] hover:text-[#4F7C63] transition-colors text-sm uppercase tracking-wide"
           >

@@ -27,12 +27,12 @@ const quantity = ref(1);
 
 // Marcas para el carrusel
 const brands = ref([
-  { name: 'Columbia', logo: new URL('../assets/brands/logo_columbia.jpg', import.meta.url).href },
+  { name: 'Columbia', logo: new URL('../assets/brands/lOGO-columbia-fo.png', import.meta.url).href },
   { name: 'The North Face', logo: new URL('../assets/brands/The-North-Face-Logo.png', import.meta.url).href },
-  { name: 'Free Country', logo: new URL('../assets/brands/Free_Country_logoBlack_Logo.jpg', import.meta.url).href },
+  { name: 'Free Country', logo: new URL('../assets/brands/freecountrycom-removebg-preview.png', import.meta.url).href },
   { name: 'Bimimi Bay', logo: new URL('../assets/brands/bimini_bay_logo_1edb5d13-23e4-4ca1-90d9-376fc602add9_140x@2x.avif', import.meta.url).href },
-  { name: 'Patagonia', logo: new URL('../assets/brands/OIP.webp', import.meta.url).href },
-  { name: 'Marmot', logo: new URL('../assets/brands/marmot-logo.jpg', import.meta.url).href },
+  { name: 'Marmot', logo: new URL('../assets/brands/marmot-logo-removebg-preview.png', import.meta.url).href },
+  { name: 'Magellan', logo: new URL('../assets/brands/magellan-outdoors-logo-removebg-preview.png', import.meta.url).href },
 ]);
 
 // Categorías dinámicas
@@ -539,33 +539,33 @@ const toggleMobileFilters = () => {
         </router-link>
       </div>
     </div>
-    
-    <!-- Carrusel de Marcas -->
+
     <div class="container mx-auto px-4 -mt-12 relative z-20">
-      <div class="bg-white rounded-lg shadow-md p-6 border border-[#D8C69E]">
+      <!-- Elimina completamente cualquier fondo, borde o sombra -->
+      <div class="bg-transparent p-0 border-none shadow-none">
         <div class="text-center mb-6">
-          <h2 class="text-2xl font-black text-[#1E3A34] mb-1 tracking-tight">MARCAS RECONOCIDAS</h2>
-          <p class="text-gray-600 text-sm">Trabajamos con las mejores marcas outdoor</p>
+          <h2 class="text-2xl font-black text-white mb-1 tracking-tight">MARCAS RECONOCIDAS</h2>
+          <p class="text-[#C2B280] text-sm">Trabajamos con las mejores marcas outdoor</p>
         </div>
         
         <div class="relative overflow-hidden">
           <div class="overflow-x-hidden">
-            <div class="flex animate-scroll space-x-6">
+            <div class="flex animate-scroll space-x-8">
               <!-- Primera pasada -->
               <div 
                 v-for="(brand, index) in brands" 
                 :key="'first-' + index"
-                class="flex-none w-36 h-16 flex items-center justify-center bg-white border border-[#D8C69E] rounded-lg hover:border-[#4F7C63] hover:shadow-md transition-all duration-200 p-3"
+                class="flex-none w-60 h-40 flex items-center justify-center bg-transparent p-2"
               >
                 <img 
                   v-if="!brandImageErrors[brand.name]"
                   :src="brand.logo" 
                   :alt="brand.name"
-                  class="max-h-10 max-w-full object-contain"
+                  class="max-h-16 max-w-full object-contain hover:scale-110 transition-transform duration-300"
                   @error="handleBrandImageError(brand.name)"
                 />
                 <div v-else class="text-center">
-                  <div class="font-semibold text-xs text-[#1E3A34] text-center">{{ brand.name }}</div>
+                  <div class="font-semibold text-sm text-white text-center">{{ brand.name }}</div>
                 </div>
               </div>
               
@@ -573,24 +573,25 @@ const toggleMobileFilters = () => {
               <div 
                 v-for="(brand, index) in brands" 
                 :key="'second-' + index"
-                class="flex-none w-36 h-16 flex items-center justify-center bg-white border border-[#D8C69E] rounded-lg hover:border-[#4F7C63] hover:shadow-md transition-all duration-200 p-3"
+                class="flex-none w-60 h-40 flex items-center justify-center bg-transparent p-2"
               >
                 <img 
                   v-if="!brandImageErrors[brand.name]"
                   :src="brand.logo" 
                   :alt="brand.name"
-                  class="max-h-10 max-w-full object-contain"
+                  class="max-h-16 max-w-full object-contain hover:scale-110 transition-transform duration-300"
                   @error="handleBrandImageError(brand.name)"
                 />
                 <div v-else class="text-center">
-                  <div class="font-semibold text-xs text-[#1E3A34] text-center">{{ brand.name }}</div>
+                  <div class="font-semibold text-sm text-white text-center">{{ brand.name }}</div>
                 </div>
               </div>
             </div>
           </div>
           
-          <div class="absolute left-0 top-0 w-16 h-full bg-gradient-to-r from-white to-transparent z-10"></div>
-          <div class="absolute right-0 top-0 w-16 h-full bg-gradient-to-l from-white to-transparent z-10"></div>
+          <!-- Gradientes suaves -->
+          <div class="absolute left-0 top-0 w-20 h-full bg-gradient-to-r from-[#4F7C63] to-transparent z-10"></div>
+          <div class="absolute right-0 top-0 w-20 h-full bg-gradient-to-l from-[#4F7C63] to-transparent z-10"></div>
         </div>
       </div>
     </div>

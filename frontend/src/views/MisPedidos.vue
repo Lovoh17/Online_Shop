@@ -10,58 +10,84 @@ const error = ref(null)
 const pedidos = ref([])
 const filtro = ref('todos')
 
-const pedidosEjemplo = [
-  {
-    id: 'ORD-2023-001',
-    fecha: '2023-05-15T14:30:00Z',
-    estado: 'completado',
-    total: 125.99,
-    items: [
-      { nombre: 'Camiseta algodón', precio: 29.99, cantidad: 2, imagen: '/img/camiseta.jpg' },
-      { nombre: 'Pantalón vaquero', precio: 49.99, cantidad: 1, imagen: '/img/pantalon.jpg' }
-    ],
-    direccionEntrega: {
-      nombre: 'Mr. Paul Bernier',
-      calle: '3388 3rd Avenue',
-      ciudad: 'South Hailee',
-      pais: 'Kazakhstan',
-      codigoPostal: '04278-5183'
+// Obtener token del localStorage
+const getToken = () => {
+  return localStorage.getItem('token')
+}
+
+// Función para obtener los pedidos del usuario desde la API
+const obtenerPedidosUsuario = async () => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    const token = getToken()
+    if (!token) {
+      throw new Error('No autenticado. Por favor inicia sesión.')
     }
-  },
-  {
-    id: 'ORD-2023-002',
-    fecha: '2023-06-02T10:15:00Z',
-    estado: 'pendiente',
-    total: 89.50,
-    items: [
-      { nombre: 'Zapatos deportivos', precio: 89.50, cantidad: 1, imagen: '/img/zapatos.jpg' }
-    ],
-    direccionEntrega: {
-      nombre: 'Mr. Paul Bernier',
-      calle: '3388 3rd Avenue',
-      ciudad: 'South Hailee',
-      pais: 'Kazakhstan',
-      codigoPostal: '04278-5183'
+
+    // Obtener el ID del usuario del token o del store de autenticación
+    const userId = authStore.user?.id || obtenerUserIdDelToken()
+    
+    if (!userId) {
+      throw new Error('No se pudo identificar al usuario')
     }
-  },
-  {
-    id: 'ORD-2023-003',
-    fecha: '2023-04-10T16:45:00Z',
-    estado: 'cancelado',
-    total: 210.75,
-    items: [
-      { nombre: 'Chaqueta de cuero', precio: 199.99, cantidad: 1, imagen: '/img/chaqueta.jpg' },
-      { nombre: 'Cinturón', precio: 10.76, cantidad: 1, imagen: '/img/cinturon.jpg' }
-    ],
-    direccionEntrega: {
-      nombre: 'Mr. Paul Bernier',
-      calle: '3388 3rd Avenue',
-      ciudad: 'South Hailee',
-      pais: 'Kazakhstan',
-      codigoPostal: '04278-5183'
+
+    const response = await fetch(`http://localhost:4000/api/pedidos?usuarioId=${userId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        throw new Error('Sesión expirada. Por favor inicia sesión nuevamente.')
+      }
+      
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`)
     }
+
+    const data = await response.json()
+    
+    if (data.success) {
+      pedidos.value = data.pedidos || []
+      console.log('Pedidos cargados:', pedidos.value) // Para debug
+    } else {
+      throw new Error(data.message || 'Error al cargar los pedidos')
+    }
+  } catch (err) {
+    console.error('Error al obtener pedidos:', err)
+    error.value = err.message
+    
+    if (err.message.includes('Sesión expirada') || err.message.includes('No autenticado')) {
+      setTimeout(() => {
+        router.push('/login')
+      }, 2000)
+    }
+  } finally {
+    loading.value = false
   }
-]
+}
+
+// Función para obtener el ID del usuario del token
+const obtenerUserIdDelToken = () => {
+  try {
+    const token = getToken()
+    if (!token) return null
+    
+    const payload = token.split('.')[1]
+    const decodedPayload = JSON.parse(atob(payload))
+    return decodedPayload.id || decodedPayload.userId || null
+  } catch (error) {
+    console.error('Error al decodificar token:', error)
+    return null
+  }
+}
 
 const pedidosFiltrados = computed(() => {
   if (filtro.value === 'todos') return pedidos.value
@@ -69,13 +95,30 @@ const pedidosFiltrados = computed(() => {
 })
 
 const formatearFecha = (fechaISO) => {
-  return new Date(fechaISO).toLocaleDateString('es-ES', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  if (!fechaISO) return 'Fecha no disponible'
+  
+  try {
+    // Manejar diferentes formatos de fecha
+    let fecha;
+    if (fechaISO.$date) {
+      fecha = new Date(fechaISO.$date.$numberLong);
+    } else if (typeof fechaISO === 'string' || typeof fechaISO === 'number') {
+      fecha = new Date(fechaISO);
+    } else {
+      return 'Fecha no disponible';
+    }
+    
+    return fecha.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch (error) {
+    console.error('Error al formatear fecha:', error)
+    return 'Fecha no disponible'
+  }
 }
 
 const estadoColor = (estado) => {
@@ -83,7 +126,9 @@ const estadoColor = (estado) => {
     completado: 'bg-[#4F7C63] text-white',
     pendiente: 'bg-[#C2B280] text-[#1E3A34]',
     cancelado: 'bg-[#E57C23] text-white',
-    enviado: 'bg-[#1E3A34] text-white'
+    enviado: 'bg-[#1E3A34] text-white',
+    procesando: 'bg-[#4F7C63] text-white',
+    entregado: 'bg-[#4F7C63] text-white'
   }
   return colores[estado] || 'bg-[#5E5E5E] text-white'
 }
@@ -93,25 +138,90 @@ const estadoTexto = (estado) => {
     completado: 'Completado',
     pendiente: 'Pendiente',
     cancelado: 'Cancelado',
-    enviado: 'Enviado'
+    enviado: 'Enviado',
+    procesando: 'Procesando',
+    entregado: 'Entregado'
   }
   return textos[estado] || estado
 }
 
-onMounted(async () => {
-  try {
-    loading.value = true
-    await new Promise(resolve => setTimeout(resolve, 800))
-    pedidos.value = pedidosEjemplo
-  } catch (err) {
-    error.value = err.message || 'Error al cargar los pedidos'
-  } finally {
-    loading.value = false
+// Función para formatear la dirección de entrega
+const formatearDireccion = (direccionEnvio) => {
+  if (!direccionEnvio) return 'Dirección no especificada'
+  
+  const partes = []
+  if (direccionEnvio.calle) partes.push(direccionEnvio.calle)
+  if (direccionEnvio.ciudad) partes.push(direccionEnvio.ciudad)
+  if (direccionEnvio.pais) partes.push(direccionEnvio.pais)
+  if (direccionEnvio.codigoPostal) partes.push(direccionEnvio.codigoPostal)
+  
+  return partes.length > 0 ? partes.join(', ') : 'Dirección no especificada'
+}
+
+// Función para obtener el nombre del cliente
+const obtenerNombreCliente = (pedido) => {
+  if (pedido.direccionEnvio?.nombreCompleto) return pedido.direccionEnvio.nombreCompleto
+  return 'Cliente'
+}
+
+// Función para obtener imagen del producto (placeholder por ahora)
+const obtenerImagenProducto = (producto) => {
+  // Aquí puedes implementar la lógica para obtener la imagen real del producto
+  return '/img/placeholder-producto.jpg'
+}
+
+// Función para calcular el subtotal de un producto
+const calcularSubtotalProducto = (producto) => {
+  if (producto.subtotal && producto.subtotal.$numberDouble) {
+    return parseFloat(producto.subtotal.$numberDouble)
   }
+  if (producto.subtotal) {
+    return parseFloat(producto.subtotal)
+  }
+  // Calcular basado en cantidad y precio unitario
+  const cantidad = producto.cantidad?.$numberInt ? parseInt(producto.cantidad.$numberInt) : (producto.cantidad || 1)
+  const precio = producto.precioUnitario?.$numberDouble ? parseFloat(producto.precioUnitario.$numberDouble) : (producto.precioUnitario || 0)
+  return cantidad * precio
+}
+
+// Función para obtener el total del pedido
+const obtenerTotalPedido = (pedido) => {
+  if (pedido.total && pedido.total.$numberDouble) {
+    return parseFloat(pedido.total.$numberDouble)
+  }
+  if (pedido.total) {
+    return parseFloat(pedido.total)
+  }
+  return 0
+}
+
+// Función para obtener cantidad de productos
+const obtenerCantidadProducto = (producto) => {
+  if (producto.cantidad?.$numberInt) {
+    return parseInt(producto.cantidad.$numberInt)
+  }
+  return producto.cantidad || 1
+}
+
+// Función para obtener precio unitario
+const obtenerPrecioUnitario = (producto) => {
+  if (producto.precioUnitario?.$numberDouble) {
+    return parseFloat(producto.precioUnitario.$numberDouble)
+  }
+  return producto.precioUnitario || 0
+}
+
+onMounted(async () => {
+  await obtenerPedidosUsuario()
 })
 
 const verDetalle = (idPedido) => {
   router.push(`/pedidos/${idPedido}`)
+}
+
+// Función para reintentar cargar los pedidos
+const reintentarCarga = () => {
+  obtenerPedidosUsuario()
 }
 </script>
 
@@ -207,11 +317,18 @@ const verDetalle = (idPedido) => {
                 Pedidos pendientes
               </button>
               <button
-                @click="filtro = 'completado'"
+                @click="filtro = 'procesando'"
                 :class="['w-full text-left px-4 py-3 transition-all font-medium', 
-                         filtro === 'completado' ? 'bg-[#4F7C63] text-white' : 'bg-[#F8FAFC] text-[#5E5E5E] hover:bg-[#E2E8F0]']"
+                         filtro === 'procesando' ? 'bg-[#4F7C63] text-white' : 'bg-[#F8FAFC] text-[#5E5E5E] hover:bg-[#E2E8F0]']"
               >
-                Pedidos completados
+                En procesamiento
+              </button>
+              <button
+                @click="filtro = 'entregado'"
+                :class="['w-full text-left px-4 py-3 transition-all font-medium', 
+                         filtro === 'entregado' ? 'bg-[#4F7C63] text-white' : 'bg-[#F8FAFC] text-[#5E5E5E] hover:bg-[#E2E8F0]']"
+              >
+                Entregados
               </button>
               <button
                 @click="filtro = 'cancelado'"
@@ -261,7 +378,7 @@ const verDetalle = (idPedido) => {
                     </div>
                     <div class="w-px h-8 bg-white/20"></div>
                     <div class="text-center">
-                      <div class="text-2xl font-bold">${{ pedidosFiltrados.reduce((sum, p) => sum + p.total, 0).toFixed(2) }}</div>
+                      <div class="text-2xl font-bold">${{ pedidosFiltrados.reduce((sum, p) => sum + obtenerTotalPedido(p), 0).toFixed(2) }}</div>
                       <div class="text-[#C2B280]">Total gastado</div>
                     </div>
                   </div>
@@ -285,12 +402,20 @@ const verDetalle = (idPedido) => {
                 </div>
                 <h3 class="text-xl font-semibold text-[#1E3A34] mb-2">Error al cargar pedidos</h3>
                 <p class="text-[#5E5E5E] mb-6">{{ error }}</p>
-                <button 
-                  @click="router.push('/')"
-                  class="px-6 py-2.5 bg-[#1E3A34] text-white hover:bg-[#2A4A40] transition-colors font-medium"
-                >
-                  Volver al Inicio
-                </button>
+                <div class="flex gap-3 justify-center">
+                  <button 
+                    @click="reintentarCarga"
+                    class="px-5 py-2.5 bg-[#1E3A34] text-white hover:bg-[#2A4A40] transition-colors font-medium"
+                  >
+                    Reintentar
+                  </button>
+                  <button 
+                    @click="router.push('/')"
+                    class="px-5 py-2.5 bg-[#F8FAFC] text-[#5E5E5E] hover:bg-[#E2E8F0] transition-colors font-medium border border-[#E2E8F0]"
+                  >
+                    Volver al Inicio
+                  </button>
+                </div>
               </div>
 
               <div v-else-if="pedidosFiltrados.length === 0" class="text-center py-16">
@@ -315,7 +440,7 @@ const verDetalle = (idPedido) => {
               <div v-else class="space-y-6">
                 <div 
                   v-for="pedido in pedidosFiltrados" 
-                  :key="pedido.id"
+                  :key="pedido._id"
                   class="bg-white border-2 border-[#E2E8F0] hover:shadow-lg transition-all duration-300 overflow-hidden"
                 >
                   <!-- Header del Pedido -->
@@ -327,8 +452,8 @@ const verDetalle = (idPedido) => {
                         </svg>
                       </div>
                       <div>
-                        <h4 class="font-semibold text-[#1E3A34]">Pedido #{{ pedido.id }}</h4>
-                        <p class="text-sm text-[#5E5E5E]">{{ formatearFecha(pedido.fecha) }}</p>
+                        <h4 class="font-semibold text-[#1E3A34]">Pedido #{{ pedido.numeroSeguimiento || pedido._id }}</h4>
+                        <p class="text-sm text-[#5E5E5E]">{{ formatearFecha(pedido.fechaPedido) }}</p>
                       </div>
                     </div>
                     <div>
@@ -342,25 +467,33 @@ const verDetalle = (idPedido) => {
                   <div class="p-6">
                     <!-- Productos -->
                     <div class="space-y-4 mb-6">
-                      <h5 class="font-semibold text-[#1E3A34] mb-3">Productos</h5>
+                      <h5 class="font-semibold text-[#1E3A34] mb-3">Productos ({{ pedido.productos?.length || 0 }})</h5>
                       <div 
-                        v-for="(item, index) in pedido.items" 
+                        v-for="(producto, index) in pedido.productos" 
                         :key="index"
                         class="flex items-center space-x-4 p-4 bg-[#F8FAFC] border border-[#E2E8F0]"
                       >
-                        <div class="flex-shrink-0 w-16 h-16 bg-[#E2E8F0] overflow-hidden">
+                        <div class="flex-shrink-0 w-16 h-16 bg-[#E2E8F0] overflow-hidden flex items-center justify-center">
                           <img 
-                            :src="item.imagen" 
-                            :alt="item.nombre"
+                            :src="obtenerImagenProducto(producto)" 
+                            :alt="producto.nombreProducto"
                             class="w-full h-full object-cover"
+                            @error="(e) => { e.target.src = '/img/placeholder-producto.jpg' }"
                           >
                         </div>
                         <div class="flex-1">
-                          <h6 class="font-medium text-[#1E3A34]">{{ item.nombre }}</h6>
-                          <p class="text-sm text-[#5E5E5E] mt-1">Cantidad: {{ item.cantidad }}</p>
+                          <h6 class="font-medium text-[#1E3A34]">{{ producto.nombreProducto }}</h6>
+                          <div class="flex flex-wrap gap-2 mt-1">
+                            <p class="text-sm text-[#5E5E5E]">Cantidad: {{ obtenerCantidadProducto(producto) }}</p>
+                            <p class="text-sm text-[#5E5E5E]">•</p>
+                            <p class="text-sm text-[#5E5E5E]">Talle: {{ producto.talle || 'N/A' }}</p>
+                            <p class="text-sm text-[#5E5E5E]">•</p>
+                            <p class="text-sm text-[#5E5E5E]">Color: {{ producto.color || 'N/A' }}</p>
+                          </div>
+                          <p class="text-sm text-[#5E5E5E] mt-1">Precio unitario: ${{ obtenerPrecioUnitario(producto).toFixed(2) }}</p>
                         </div>
                         <div class="text-right">
-                          <p class="font-semibold text-[#1E3A34]">${{ item.precio.toFixed(2) }}</p>
+                          <p class="font-semibold text-[#1E3A34]">${{ calcularSubtotalProducto(producto).toFixed(2) }}</p>
                         </div>
                       </div>
                     </div>
@@ -371,20 +504,25 @@ const verDetalle = (idPedido) => {
                         <h5 class="font-semibold text-[#1E3A34] mb-3">Dirección de Entrega</h5>
                         <div class="bg-[#F8FAFC] p-4 border border-[#E2E8F0]">
                           <p class="text-sm text-[#5E5E5E] leading-relaxed">
-                            {{ pedido.direccionEntrega.nombre }}<br>
-                            {{ pedido.direccionEntrega.calle }}<br>
-                            {{ pedido.direccionEntrega.ciudad }}, {{ pedido.direccionEntrega.pais }}<br>
-                            {{ pedido.direccionEntrega.codigoPostal }}
+                            <strong>{{ obtenerNombreCliente(pedido) }}</strong><br>
+                            {{ formatearDireccion(pedido.direccionEnvio) }}
+                            <template v-if="pedido.direccionEnvio?.telefono">
+                              <br>Teléfono: {{ pedido.direccionEnvio.telefono }}
+                            </template>
                           </p>
+                        </div>
+                        <div v-if="pedido.numeroSeguimiento" class="mt-3">
+                          <p class="text-sm font-semibold text-[#1E3A34]">Número de seguimiento:</p>
+                          <p class="text-sm text-[#5E5E5E]">{{ pedido.numeroSeguimiento }}</p>
                         </div>
                       </div>
                       
                       <div class="text-center lg:text-right">
                         <div class="bg-[#1E3A34] text-white p-6">
                           <p class="text-sm opacity-90 mb-2">Total del Pedido</p>
-                          <p class="text-3xl font-bold mb-4">${{ pedido.total.toFixed(2) }}</p>
+                          <p class="text-3xl font-bold mb-4">${{ obtenerTotalPedido(pedido).toFixed(2) }}</p>
                           <button
-                            @click="verDetalle(pedido.id)"
+                            @click="verDetalle(pedido._id)"
                             class="w-full bg-white/20 text-white hover:bg-white/30 px-6 py-2 font-medium transition-all border border-white/20"
                           >
                             Ver Detalles Completos

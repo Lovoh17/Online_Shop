@@ -1,4 +1,3 @@
-<!-- MensProducts.vue -->
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useCartStore } from '@/stores/cart';
@@ -6,7 +5,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useRouter } from 'vue-router';
 
 const productos = ref([]);
-const mensCategories = ref([]);
+const kidsCategories = ref([]);
 const imageError = ref({});
 const cartStore = useCartStore();
 const authStore = useAuthStore();
@@ -18,6 +17,7 @@ const quantity = ref(1);
 // Filtros
 const activeCollection = ref('Todos');
 const activeCategory = ref(null);
+const activeAgeRange = ref(null);
 const sortOption = ref('Destacados');
 const loading = ref(false);
 const error = ref(null);
@@ -31,6 +31,14 @@ const collections = ref([
   { name: 'Nuevos', count: 0 },
   { name: 'Ofertas', count: 0 },
   { name: 'Más Vendidos', count: 0 }
+]);
+
+// Rangos de edad
+const ageRanges = ref([
+  { id: 'toddler', label: '0-3 años', minAge: 0, maxAge: 3 },
+  { id: 'preschool', label: '4-6 años', minAge: 4, maxAge: 6 },
+  { id: 'school', label: '7-10 años', minAge: 7, maxAge: 10 },
+  { id: 'preteen', label: '11-13 años', minAge: 11, maxAge: 13 }
 ]);
 
 const increaseQuantity = () => {
@@ -48,7 +56,7 @@ const addToCartFromQuickView = async () => {
   closeQuickView();
 };
 
-const cargarProductosHombre = async () => {
+const cargarProductosNiños = async () => {
   try {
     loading.value = true;
     error.value = null;
@@ -68,14 +76,16 @@ const cargarProductosHombre = async () => {
     const allProducts = productsData.productos || [];
     console.log('Total productos recibidos:', allProducts.length);
     
-    const productosHombre = allProducts.filter(producto => {
-      return producto.genero && producto.genero.toLowerCase() === 'hombre';
+    // Filtrar productos para niños
+    const productosNiños = allProducts.filter(producto => {
+      const genero = producto.genero?.toLowerCase() || '';
+      return genero === 'niño' || genero === 'niños' || genero === 'infantil' || genero === 'kids';
     });
     
-    console.log('Productos de hombre filtrados:', productosHombre.length);
+    console.log('Productos de niños filtrados:', productosNiños.length);
     
     const categoriasUnicas = new Set();
-    productosHombre.forEach(producto => {
+    productosNiños.forEach(producto => {
       if (producto.categoria) {
         categoriasUnicas.add(producto.categoria);
       }
@@ -89,18 +99,18 @@ const cargarProductosHombre = async () => {
       if (categoriesData.success) {
         const todasLasCategorias = categoriesData.categorias || [];
         
-        mensCategories.value = todasLasCategorias.filter(cat => 
+        kidsCategories.value = todasLasCategorias.filter(cat => 
           categoriasUnicas.has(cat.nombre) || categoriasUnicas.has(cat._id)
         );
         
-        console.log('Categorías de hombre disponibles:', mensCategories.value.length);
+        console.log('Categorías de niños disponibles:', kidsCategories.value.length);
       }
     }
     
-    if (mensCategories.value.length === 0) {
+    if (kidsCategories.value.length === 0) {
       const categoriasMap = new Map();
       
-      productosHombre.forEach(producto => {
+      productosNiños.forEach(producto => {
         if (producto.categoria && !categoriasMap.has(producto.categoria)) {
           categoriasMap.set(producto.categoria, {
             _id: producto.categoria,
@@ -110,12 +120,12 @@ const cargarProductosHombre = async () => {
         }
       });
       
-      mensCategories.value = Array.from(categoriasMap.values());
+      kidsCategories.value = Array.from(categoriasMap.values());
     }
     
-    productos.value = productosHombre
+    productos.value = productosNiños
       .map(producto => {
-        const categoriaObj = mensCategories.value.find(cat => 
+        const categoriaObj = kidsCategories.value.find(cat => 
           cat._id === producto.categoria || cat.nombre === producto.categoria
         );
         
@@ -131,7 +141,9 @@ const cargarProductosHombre = async () => {
           descuento: producto.descuento || 0,
           nuevo: producto.nuevo || isNuevoProducto(producto),
           stock: producto.stock || 0,
-          enStock: (producto.stock || 0) > 0
+          enStock: (producto.stock || 0) > 0,
+          minAge: producto.minAge || 0,
+          maxAge: producto.maxAge || 13
         };
       })
       .filter(producto => producto.enStock);
@@ -141,7 +153,7 @@ const cargarProductosHombre = async () => {
     updateCollectionCounts();
     
   } catch (err) {
-    console.error("Error al cargar productos de hombre:", err);
+    console.error("Error al cargar productos de niños:", err);
     error.value = err.message || 'Error al cargar los productos';
   } finally {
     loading.value = false;
@@ -166,6 +178,13 @@ const filteredProducts = computed(() => {
       p.categoria === activeCategory.value._id || 
       p.categoria === activeCategory.value.nombre ||
       p.categoriaNombre === activeCategory.value.nombre
+    );
+  }
+  
+  if (activeAgeRange.value) {
+    result = result.filter(p => 
+      p.minAge <= activeAgeRange.value.maxAge && 
+      p.maxAge >= activeAgeRange.value.minAge
     );
   }
   
@@ -216,6 +235,10 @@ const setActiveCategory = (category) => {
   activeCategory.value = category;
 };
 
+const setActiveAgeRange = (ageRange) => {
+  activeAgeRange.value = activeAgeRange.value?.id === ageRange.id ? null : ageRange;
+};
+
 const clearCollection = () => {
   activeCollection.value = 'Todos';
 };
@@ -224,9 +247,14 @@ const clearCategory = () => {
   activeCategory.value = null;
 };
 
+const clearAgeRange = () => {
+  activeAgeRange.value = null;
+};
+
 const resetFilters = () => {
   activeCollection.value = 'Todos';
   activeCategory.value = null;
+  activeAgeRange.value = null;
   sortOption.value = 'Destacados';
 };
 
@@ -241,6 +269,13 @@ const getCollectionCount = (collectionName) => {
     );
   }
   
+  if (activeAgeRange.value) {
+    products = products.filter(p => 
+      p.minAge <= activeAgeRange.value.maxAge && 
+      p.maxAge >= activeAgeRange.value.minAge
+    );
+  }
+  
   if (collectionName === 'Todos') return products.length;
   if (collectionName === 'Nuevos') return products.filter(p => p.nuevo).length;
   if (collectionName === 'Ofertas') return products.filter(p => p.descuento > 0).length;
@@ -250,9 +285,18 @@ const getCollectionCount = (collectionName) => {
 };
 
 const getCategoryProductCount = (categoriaId) => {
-  return productos.value.filter(p => 
+  let result = productos.value.filter(p => 
     p.categoria === categoriaId || p.categoriaNombre === categoriaId
-  ).length;
+  );
+  
+  if (activeAgeRange.value) {
+    result = result.filter(p => 
+      p.minAge <= activeAgeRange.value.maxAge && 
+      p.maxAge >= activeAgeRange.value.minAge
+    );
+  }
+  
+  return result.length;
 };
 
 const updateCollectionCounts = () => {
@@ -327,7 +371,7 @@ const mostrarNotificacion = (mensaje, tipo = 'success') => {
 };
 
 onMounted(() => {
-  cargarProductosHombre();
+  cargarProductosNiños();
 });
 </script>
 
@@ -337,8 +381,8 @@ onMounted(() => {
     <section class="relative overflow-hidden h-[550px]">
       <div class="absolute inset-0">
         <img 
-          src="../assets/mens.jpg" 
-          alt="Men's Collection Banner"
+          src="../assets/Kids.png" 
+          alt="Kids Collection Banner"
           class="w-full h-full object-cover"
         />
         <div class="absolute inset-0 bg-gradient-to-r from-[#1E3A34]/80 via-[#1E3A34]/60 to-transparent"></div>
@@ -350,15 +394,15 @@ onMounted(() => {
             <div class="flex items-center space-x-2 text-sm text-white/80 mb-4">
               <router-link to="/" class="hover:text-white transition-colors">Collections</router-link>
               <span>/</span>
-              <span class="text-white font-semibold">Men's</span>
+              <span class="text-white font-semibold">Kids</span>
             </div>
             
             <h1 class="text-6xl md:text-8xl font-black mb-6 tracking-tight text-white leading-none">
-              MEN'S
+              KIDS
             </h1>
             
             <p class="text-xl md:text-2xl text-[#D8C69E] font-light mb-4">
-              Colección exclusiva para hombres
+              Colección especial para niños
             </p>
             <p class="text-sm text-white/70">
               {{ productos.length }} productos disponibles
@@ -366,284 +410,332 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      
-      <div class="absolute left-8 top-1/2 transform -translate-y-1/2 -rotate-90 origin-left hidden lg:block">
-        <div class="bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full border border-white/20">
-          <span class="text-white text-sm font-bold tracking-widest">WHAT'S FISHING TRIP</span>
-        </div>
-      </div>
     </section>
 
     <!-- Main Content -->
     <div class="container mx-auto px-4 py-8">
       <!-- Filtros Horizontales Mejorados -->
-<div class="bg-white rounded-xl shadow-sm border border-[#D8C69E] mb-8">
-  <div class="p-6">
-    <!-- Header de Filtros -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-      <div>
-        <h2 class="text-lg font-black text-[#1E3A34] tracking-tight">FILTROS</h2>
-        <p class="text-sm text-gray-600 mt-1">
-          {{ filteredProducts.length }} productos encontrados
-        </p>
-      </div>
-      
-      <!-- Ordenar por -->
-      <div class="flex items-center gap-3">
-        <span class="text-sm font-semibold text-[#1E3A34] whitespace-nowrap">Ordenar por:</span>
-        <select 
-          v-model="sortOption"
-          class="px-4 py-2.5 border-2 border-[#D8C69E] rounded-lg text-sm focus:outline-none focus:border-[#1E3A34] transition-colors bg-white min-w-[180px]"
-        >
-          <option>Destacados</option>
-          <option>Más nuevos</option>
-          <option>Precio: menor a mayor</option>
-          <option>Precio: mayor a menor</option>
-          <option>Mejor valorados</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Filtros Activos -->
-    <div v-if="activeCollection !== 'Todos' || activeCategory" class="flex flex-wrap gap-2 mb-6 p-4 bg-[#F8F6F0] rounded-lg border border-[#D8C69E]">
-      <span class="text-sm font-semibold text-[#1E3A34] mr-2">Filtros activos:</span>
-      <span 
-        v-if="activeCollection !== 'Todos'"
-        class="bg-[#1E3A34] text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2"
-      >
-        {{ activeCollection }}
-        <button @click="clearCollection" class="hover:text-[#D8C69E] transition-colors">
-          <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </span>
-      <span 
-        v-if="activeCategory"
-        class="bg-[#1E3A34] text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2"
-      >
-        {{ activeCategory.nombre }}
-        <button @click="clearCategory" class="hover:text-[#D8C69E] transition-colors">
-          <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </span>
-      <button 
-        v-if="activeCollection !== 'Todos' || activeCategory"
-        @click="resetFilters"
-        class="text-xs text-gray-600 hover:text-[#1E3A34] transition-colors ml-2 flex items-center gap-1"
-      >
-        <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-        </svg>
-        Limpiar todos
-      </button>
-    </div>
-
-    <!-- Categorías y Colecciones en Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Categorías -->
-      <div>
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-bold text-[#1E3A34] uppercase tracking-wide flex items-center gap-2">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            Categorías
-          </h3>
-          <button 
-            v-if="activeCategory"
-            @click="clearCategory"
-            class="text-xs text-gray-500 hover:text-[#1E3A34] transition-colors flex items-center gap-1"
-          >
-            Limpiar
-            <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <div v-if="loading && mensCategories.length === 0" class="text-center py-4">
-          <div class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-[#D8C69E] border-t-[#1E3A34]"></div>
-        </div>
-        
-        <div v-else class="flex flex-wrap gap-2">
-          <button
-            v-for="category in mensCategories"
-            :key="category._id"
-            @click="setActiveCategory(category)"
-            :class="{
-              'px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 border-2 flex items-center gap-2': true,
-              'bg-[#1E3A34] border-[#1E3A34] text-white shadow-md hover:shadow-lg': activeCategory?._id === category._id || activeCategory?.nombre === category.nombre,
-              'bg-white border-[#D8C69E] text-[#1E3A34] hover:bg-[#F8F6F0] hover:border-[#1E3A34]': activeCategory?._id !== category._id && activeCategory?.nombre !== category.nombre
-            }"
-          >
-            <span>{{ category.nombre.replace(' Mujer', '').replace('Mujer', '').trim() }}</span>
-            <span class="text-xs opacity-75 bg-white/20 px-1.5 py-0.5 rounded-full">
-              {{ getCategoryProductCount(category._id || category.nombre) }}
-            </span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Colecciones -->
-      <div>
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-bold text-[#1E3A34] uppercase tracking-wide flex items-center gap-2">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-            </svg>
-            Colecciones
-          </h3>
-          <button 
-            v-if="activeCollection !== 'Todos'"
-            @click="clearCollection"
-            class="text-xs text-gray-500 hover:text-[#1E3A34] transition-colors flex items-center gap-1"
-          >
-            Limpiar
-            <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        
-        <div class="flex flex-wrap gap-2">
-          <button
-            v-for="collection in collections"
-            :key="collection.name"
-            @click="setActiveCollection(collection.name)"
-            :class="{
-              'px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 border-2 flex items-center gap-2': true,
-              'bg-[#1E3A34] border-[#1E3A34] text-white shadow-md hover:shadow-lg': activeCollection === collection.name,
-              'bg-white border-[#D8C69E] text-[#1E3A34] hover:bg-[#F8F6F0] hover:border-[#1E3A34]': activeCollection !== collection.name
-            }"
-          >
-            <span>{{ collection.name }}</span>
-            <span class="text-xs opacity-75 bg-white/20 px-1.5 py-0.5 rounded-full">
-              {{ collection.count }}
-            </span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-      <div class="flex flex-col lg:flex-row gap-8">
-        
-
-        <!-- Products Grid -->
-        <div class="lg:w-full">
-          <!-- Loading State -->
-          <div v-if="loading" class="text-center py-12">
-            <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#D8C69E] border-t-[#1E3A34]"></div>
-            <p class="mt-4 text-gray-600">Cargando productos...</p>
-          </div>
-
-          <!-- Error State -->
-          <div v-else-if="error" class="text-center py-12">
-            <p class="text-red-500 mb-4">{{ error }}</p>
-            <button @click="cargarProductosHombre" class="bg-[#1E3A34] text-white px-6 py-2 rounded-lg">
-              Reintentar
-            </button>
-          </div>
-
-          <!-- Empty State -->
-          <div v-else-if="filteredProducts.length === 0" class="text-center py-12">
-            <p class="text-gray-600 mb-4">No se encontraron productos</p>
-            <button @click="resetFilters" class="text-[#1E3A34] underline">
-              Limpiar filtros
-            </button>
-          </div>
-
-          <!-- Products -->
-          <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <div
-              v-for="producto in filteredProducts"
-              :key="producto._id"
-              class="bg-white border border-[#D8C69E] rounded-lg overflow-hidden group hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-            >
-              <div class="relative aspect-square overflow-hidden bg-gray-100">
-                <img
-                  v-if="!imageError[producto._id]"
-                  :src="producto.imagenes"
-                  :alt="producto.nombre"
-                  @error="handleImageError(producto._id)"
-                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-                <div 
-                  v-else
-                  class="w-full h-full bg-[#D8C69E] flex items-center justify-center"
-                >
-                  <span class="text-gray-600 text-sm">Sin imagen</span>
-                </div>
-                
-                <!-- Quick View Button -->
-                <button 
-                  @click="openQuickView(producto)"
-                  class="absolute bottom-0 left-0 right-0 bg-[#1E3A34] text-white py-3 px-4 font-semibold text-sm uppercase tracking-wide transform translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex items-center justify-center space-x-2"
-                >
-                  <span>Quick view</span>
-                </button>
-                
-                <!-- Eye Icon -->
-                <button 
-                  @click="openQuickView(producto)"
-                  class="absolute top-3 right-3 bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-md hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100 duration-300"
-                >
-                  <svg class="h-5 w-5 text-[#1E3A34]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                </button>
-                
-                <!-- Badges -->
-                <div class="absolute top-3 left-3 flex flex-col space-y-2">
-                  <span 
-                    v-if="producto.nuevo"
-                    class="bg-[#1E3A34] text-white text-xs px-2 py-1 font-bold rounded"
-                  >
-                    NUEVO
-                  </span>
-                  <span 
-                    v-if="producto.descuento"
-                    class="bg-[#E57C23] text-white text-xs px-2 py-1 font-bold rounded"
-                  >
-                    -{{ producto.descuento }}%
-                  </span>
-                </div>
-                
-                <!-- Rating Badge -->
-                <div 
-                  v-if="producto.rating >= 4"
-                  class="absolute top-3 left-1/2 transform -translate-x-1/2 bg-white rounded-full px-3 py-1 flex items-center space-x-1 shadow-md"
-                >
-                  <svg class="h-4 w-4 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <span class="text-xs font-bold text-[#1E3A34]">{{ producto.rating }}</span>
-                  <span class="text-xs text-gray-600">({{ Math.floor(Math.random() * 200) + 10 }})</span>
-                </div>
-              </div>
-              
-              <div class="p-4">
-                <h3 class="font-bold text-sm text-[#1E3A34] mb-1 tracking-wide truncate">{{ producto.nombre }}</h3>
-
-                <div class="flex items-center mb-3">
-                  <span class="text-lg font-black text-[#1E3A34]">${{ producto.precio.toFixed(2) }}</span>
-                  <span v-if="producto.precioOriginal" class="text-sm text-gray-400 line-through ml-2">${{ producto.precioOriginal.toFixed(2) }}</span>
-                </div>
-              </div>
+      <div class="bg-white rounded-xl shadow-sm border border-[#D8C69E] mb-8">
+        <div class="p-6">
+          <!-- Header de Filtros -->
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+            <div>
+              <h2 class="text-lg font-black text-[#1E3A34] tracking-tight">FILTROS</h2>
+              <p class="text-sm text-gray-600 mt-1">
+                {{ filteredProducts.length }} productos encontrados
+              </p>
+            </div>
+            
+            <!-- Ordenar por -->
+            <div class="flex items-center gap-3">
+              <span class="text-sm font-semibold text-[#1E3A34] whitespace-nowrap">Ordenar por:</span>
+              <select 
+                v-model="sortOption"
+                class="px-4 py-2.5 border-2 border-[#D8C69E] rounded-lg text-sm focus:outline-none focus:border-[#1E3A34] transition-colors bg-white min-w-[180px]"
+              >
+                <option>Destacados</option>
+                <option>Más nuevos</option>
+                <option>Precio: menor a mayor</option>
+                <option>Precio: mayor a menor</option>
+                <option>Mejor valorados</option>
+              </select>
             </div>
           </div>
 
-          <!-- Load More -->
-          <div v-if="filteredProducts.length > 0 && filteredProducts.length >= 12" class="text-center mt-12">
-            <button class="border-2 border-[#1E3A34] text-[#1E3A34] hover:bg-[#1E3A34] hover:text-white px-8 py-3 font-bold text-sm uppercase tracking-wider transition-colors rounded-lg shadow-md hover:shadow-xl">
-              Cargar más productos
+          <!-- Filtros Activos -->
+          <div v-if="activeCollection !== 'Todos' || activeCategory || activeAgeRange" class="flex flex-wrap gap-2 mb-6 p-4 bg-[#F8F6F0] rounded-lg border border-[#D8C69E]">
+            <span class="text-sm font-semibold text-[#1E3A34] mr-2">Filtros activos:</span>
+            <span 
+              v-if="activeCollection !== 'Todos'"
+              class="bg-[#1E3A34] text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2"
+            >
+              {{ activeCollection }}
+              <button @click="clearCollection" class="hover:text-[#D8C69E] transition-colors">
+                <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+            <span 
+              v-if="activeCategory"
+              class="bg-[#1E3A34] text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2"
+            >
+              {{ activeCategory.nombre }}
+              <button @click="clearCategory" class="hover:text-[#D8C69E] transition-colors">
+                <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+            <span 
+              v-if="activeAgeRange"
+              class="bg-[#1E3A34] text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-2"
+            >
+              {{ activeAgeRange.label }}
+              <button @click="clearAgeRange" class="hover:text-[#D8C69E] transition-colors">
+                <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+            <button 
+              v-if="activeCollection !== 'Todos' || activeCategory || activeAgeRange"
+              @click="resetFilters"
+              class="text-xs text-gray-600 hover:text-[#1E3A34] transition-colors ml-2 flex items-center gap-1"
+            >
+              <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+              Limpiar todos
             </button>
           </div>
+
+          <!-- Categorías, Colecciones y Rango de Edad en Grid -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Categorías -->
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-bold text-[#1E3A34] uppercase tracking-wide flex items-center gap-2">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  Categorías
+                </h3>
+                <button 
+                  v-if="activeCategory"
+                  @click="clearCategory"
+                  class="text-xs text-gray-500 hover:text-[#1E3A34] transition-colors flex items-center gap-1"
+                >
+                  Limpiar
+                  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div v-if="loading && kidsCategories.length === 0" class="text-center py-4">
+                <div class="inline-block animate-spin rounded-full h-6 w-6 border-2 border-[#D8C69E] border-t-[#1E3A34]"></div>
+              </div>
+              
+              <div v-else class="flex flex-wrap gap-2">
+                <button
+                  v-for="category in kidsCategories"
+                  :key="category._id"
+                  @click="setActiveCategory(category)"
+                  :class="{
+                    'px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 border-2 flex items-center gap-2': true,
+                    'bg-[#1E3A34] border-[#1E3A34] text-white shadow-md hover:shadow-lg': activeCategory?._id === category._id || activeCategory?.nombre === category.nombre,
+                    'bg-white border-[#D8C69E] text-[#1E3A34] hover:bg-[#F8F6F0] hover:border-[#1E3A34]': activeCategory?._id !== category._id && activeCategory?.nombre !== category.nombre
+                  }"
+                >
+                  <span>{{ category.nombre }}</span>
+                  <span class="text-xs opacity-75 bg-white/20 px-1.5 py-0.5 rounded-full">
+                    {{ getCategoryProductCount(category._id || category.nombre) }}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Colecciones -->
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-bold text-[#1E3A34] uppercase tracking-wide flex items-center gap-2">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  Colecciones
+                </h3>
+                <button 
+                  v-if="activeCollection !== 'Todos'"
+                  @click="clearCollection"
+                  class="text-xs text-gray-500 hover:text-[#1E3A34] transition-colors flex items-center gap-1"
+                >
+                  Limpiar
+                  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="collection in collections"
+                  :key="collection.name"
+                  @click="setActiveCollection(collection.name)"
+                  :class="{
+                    'px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 border-2 flex items-center gap-2': true,
+                    'bg-[#1E3A34] border-[#1E3A34] text-white shadow-md hover:shadow-lg': activeCollection === collection.name,
+                    'bg-white border-[#D8C69E] text-[#1E3A34] hover:bg-[#F8F6F0] hover:border-[#1E3A34]': activeCollection !== collection.name
+                  }"
+                >
+                  <span>{{ collection.name }}</span>
+                  <span class="text-xs opacity-75 bg-white/20 px-1.5 py-0.5 rounded-full">
+                    {{ collection.count }}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Rango de Edad -->
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-bold text-[#1E3A34] uppercase tracking-wide flex items-center gap-2">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Edad
+                </h3>
+                <button 
+                  v-if="activeAgeRange"
+                  @click="clearAgeRange"
+                  class="text-xs text-gray-500 hover:text-[#1E3A34] transition-colors flex items-center gap-1"
+                >
+                  Limpiar
+                  <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="ageRange in ageRanges"
+                  :key="ageRange.id"
+                  @click="setActiveAgeRange(ageRange)"
+                  :class="{
+                    'px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 border-2 flex items-center gap-2': true,
+                    'bg-[#1E3A34] border-[#1E3A34] text-white shadow-md hover:shadow-lg': activeAgeRange?.id === ageRange.id,
+                    'bg-white border-[#D8C69E] text-[#1E3A34] hover:bg-[#F8F6F0] hover:border-[#1E3A34]': activeAgeRange?.id !== ageRange.id
+                  }"
+                >
+                  {{ ageRange.label }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Products Grid -->
+      <div>
+        <!-- Loading State -->
+        <div v-if="loading" class="text-center py-12">
+          <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#D8C69E] border-t-[#1E3A34]"></div>
+          <p class="mt-4 text-gray-600">Cargando productos...</p>
+        </div>
+
+        <!-- Error State -->
+        <div v-else-if="error" class="text-center py-12">
+          <p class="text-red-500 mb-4">{{ error }}</p>
+          <button @click="cargarProductosNiños" class="bg-[#1E3A34] text-white px-6 py-2 rounded-lg">
+            Reintentar
+          </button>
+        </div>
+
+        <!-- Empty State -->
+        <div v-else-if="filteredProducts.length === 0" class="text-center py-12">
+          <p class="text-gray-600 mb-4">No se encontraron productos</p>
+          <button @click="resetFilters" class="text-[#1E3A34] underline">
+            Limpiar filtros
+          </button>
+        </div>
+
+        <!-- Products -->
+        <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div
+            v-for="producto in filteredProducts"
+            :key="producto._id"
+            class="bg-white border border-[#D8C69E] rounded-lg overflow-hidden group hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+          >
+            <div class="relative aspect-square overflow-hidden bg-gray-100">
+              <img
+                v-if="!imageError[producto._id]"
+                :src="producto.imagenes"
+                :alt="producto.nombre"
+                @error="handleImageError(producto._id)"
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+              />
+              <div 
+                v-else
+                class="w-full h-full bg-[#D8C69E] flex items-center justify-center"
+              >
+                <span class="text-gray-600 text-sm">Sin imagen</span>
+              </div>
+              
+              <!-- Quick View Button -->
+              <button 
+                @click="openQuickView(producto)"
+                class="absolute bottom-0 left-0 right-0 bg-[#1E3A34] text-white py-3 px-4 font-semibold text-sm uppercase tracking-wide transform translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex items-center justify-center space-x-2"
+              >
+                <span>Quick view</span>
+              </button>
+              
+              <!-- Eye Icon -->
+              <button 
+                @click="openQuickView(producto)"
+                class="absolute top-3 right-3 bg-white rounded-full w-10 h-10 flex items-center justify-center shadow-md hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100 duration-300"
+              >
+                <svg class="h-5 w-5 text-[#1E3A34]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </button>
+              
+              <!-- Badges -->
+              <div class="absolute top-3 left-3 flex flex-col space-y-2">
+                <span 
+                  v-if="producto.nuevo"
+                  class="bg-[#1E3A34] text-white text-xs px-2 py-1 font-bold rounded"
+                >
+                  NUEVO
+                </span>
+                <span 
+                  v-if="producto.descuento"
+                  class="bg-[#E57C23] text-white text-xs px-2 py-1 font-bold rounded"
+                >
+                  -{{ producto.descuento }}%
+                </span>
+                <span 
+                  v-if="activeAgeRange?.label"
+                  class="bg-[#4F7C63] text-white text-xs px-2 py-1 font-bold rounded"
+                >
+                  {{ producto.minAge }}-{{ producto.maxAge }} años
+                </span>
+              </div>
+              
+              <!-- Rating Badge -->
+              <div 
+                v-if="producto.rating >= 4"
+                class="absolute top-3 left-1/2 transform -translate-x-1/2 bg-white rounded-full px-3 py-1 flex items-center space-x-1 shadow-md"
+              >
+                <svg class="h-4 w-4 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                <span class="text-xs font-bold text-[#1E3A34]">{{ producto.rating }}</span>
+                <span class="text-xs text-gray-600">({{ Math.floor(Math.random() * 200) + 10 }})</span>
+              </div>
+            </div>
+            
+            <div class="p-4">
+              <h3 class="font-bold text-sm text-[#1E3A34] mb-1 tracking-wide truncate">{{ producto.nombre }}</h3>
+
+              <div class="flex items-center mb-3">
+                <span class="text-lg font-black text-[#1E3A34]">${{ producto.precio.toFixed(2) }}</span>
+                <span v-if="producto.precioOriginal" class="text-sm text-gray-400 line-through ml-2">${{ producto.precioOriginal.toFixed(2) }}</span>
+              </div>
+              
+              <div class="text-xs text-gray-600">
+                Edad recomendada: {{ producto.minAge }}-{{ producto.maxAge }} años
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Load More -->
+        <div v-if="filteredProducts.length > 0 && filteredProducts.length >= 12" class="text-center mt-12">
+          <button class="border-2 border-[#1E3A34] text-[#1E3A34] hover:bg-[#1E3A34] hover:text-white px-8 py-3 font-bold text-sm uppercase tracking-wider transition-colors rounded-lg shadow-md hover:shadow-xl">
+            Cargar más productos
+          </button>
         </div>
       </div>
     </div>
@@ -700,6 +792,9 @@ onMounted(() => {
                       >
                         -{{ quickViewProduct.descuento }}%
                       </span>
+                      <span class="bg-[#4F7C63] text-white text-xs px-3 py-1 font-bold">
+                        {{ quickViewProduct.minAge }}-{{ quickViewProduct.maxAge }} años
+                      </span>
                     </div>
 
                     <!-- Pagination dots -->
@@ -717,6 +812,12 @@ onMounted(() => {
                     <h2 class="text-3xl font-bold text-[#1E3A34] mb-2 uppercase tracking-tight">
                       {{ quickViewProduct.nombre }}
                     </h2>
+                    
+                    <div class="flex items-center mb-2">
+                      <span class="text-xs bg-[#4F7C63] text-white px-3 py-1 font-bold">
+                        Edad: {{ quickViewProduct.minAge }}-{{ quickViewProduct.maxAge }} años
+                      </span>
+                    </div>
                     
                     <div class="flex items-center mb-6">
                       <span class="text-3xl font-black text-[#1E3A34]">${{ quickViewProduct.precio.toFixed(2) }}</span>
@@ -736,7 +837,7 @@ onMounted(() => {
                     <div class="mb-6">
                       <div class="flex items-center justify-between mb-3">
                         <label class="text-sm font-semibold text-[#1E3A34]">Color:</label>
-                        <span class="text-sm text-gray-600">Grisaille</span>
+                        <span class="text-sm text-gray-600">Disponible</span>
                       </div>
                       <div class="grid grid-cols-9 gap-2">
                         <button 
