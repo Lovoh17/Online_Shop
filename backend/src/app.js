@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import { connectDB, getDB } from "./config/database.js";
 import corsMiddleware from "./config/cors.js";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler.js";
-import { CarritoRoutes, CategoriaRoutes, PedidoRoutes, ProductosRoutes, setupHealthChecks, UsuarioRoutes } from "./modules/index.js";
+import { CarritoRoutes,  Pago,CategoriaRoutes, PedidoRoutes, ProductosRoutes, setupHealthChecks, UsuarioRoutes } from "./modules/index.js";
 
 dotenv.config();
 const app = express();
@@ -37,6 +37,7 @@ async function startServer() {
     app.use(UsuarioRoutes(db));
     app.use(ProductosRoutes(db));
     app.use(PedidoRoutes(db));
+    app.use(Pago(db));
 
     app.use(notFoundHandler);
 

@@ -73,7 +73,7 @@
           </div>
         </div>
         <router-link 
-          to="/dashboard" 
+          to="/products" 
           class="group bg-white px-6 py-3 rounded-lg border border-[#1E3A34] hover:bg-[#1E3A34] transition-all duration-300"
         >
           <span class="font-bold text-[#1E3A34] group-hover:text-white transition-colors duration-300 flex items-center space-x-2">

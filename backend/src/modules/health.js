@@ -19,6 +19,7 @@ export const setupHealthChecks = (app) => {
                     carrito: '/api/carrito',
                     usuario:  '/api/usuarios',
                     productos: '/api/productos',
+                    pagos: '/api/pago',
                     pedido: '/api/pedido',
                     health: '/api/health'
                 }

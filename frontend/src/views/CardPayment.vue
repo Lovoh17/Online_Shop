@@ -40,6 +40,7 @@
             @input="formatCardNumber"
             maxlength="19"
           >
+          <div v-if="cardErrors.numero" class="error-text">{{ cardErrors.numero }}</div>
         </div>
         
         <div class="form-group">
@@ -49,6 +50,7 @@
             type="text" 
             placeholder="Como aparece en la tarjeta"
           >
+          <div v-if="cardErrors.nombre" class="error-text">{{ cardErrors.nombre }}</div>
         </div>
         
         <div class="form-row">
@@ -61,6 +63,7 @@
               @input="formatExpiry"
               maxlength="5"
             >
+            <div v-if="cardErrors.expiracion" class="error-text">{{ cardErrors.expiracion }}</div>
           </div>
           <div class="form-group">
             <label>CVV</label>
@@ -70,6 +73,7 @@
               placeholder="123" 
               maxlength="4"
             >
+            <div v-if="cardErrors.cvv" class="error-text">{{ cardErrors.cvv }}</div>
           </div>
         </div>
 
@@ -80,20 +84,21 @@
             placeholder="Ingresa tu dirección completa"
             rows="3"
           ></textarea>
+          <div v-if="!direccionEnvio && showAddressError" class="error-text">La dirección de envío es requerida</div>
         </div>
       </div>
 
       <div class="action-buttons">
         <button @click="step = 1" class="btn btn-secondary">Volver</button>
         <button 
-          @click="step = 3" 
+          @click="validateAndContinue" 
           class="btn btn-primary"
-          :disabled="!isCardFormValid"
         >
           Continuar
         </button>
       </div>
     </div>
+
     <div v-if="step === 3" class="payment-step">
       <h2>Confirma tu pago</h2>
       <div class="payment-confirmation">
@@ -105,7 +110,7 @@
         
         <div class="confirmation-section">
           <h4>Método de pago</h4>
-          <p>**** **** **** {{ cardData.numero.slice(-4) }}</p>
+          <p>**** **** **** {{ getLastFourDigits(cardData.numero) }}</p>
           <p>{{ cardData.nombre }}</p>
         </div>
 
@@ -126,6 +131,7 @@
         </button>
       </div>
     </div>
+
     <div v-if="step === 4" class="payment-step">
       <div v-if="paymentStatus === 'processing'" class="processing-payment">
         <div class="spinner"></div>
@@ -168,7 +174,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { useCartStore } from '@/stores/cart'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
@@ -176,6 +182,8 @@ import { useRouter } from 'vue-router'
 const cartStore = useCartStore()
 const authStore = useAuthStore()
 const router = useRouter()
+
+// Estados reactivos
 const step = ref(1)
 const paymentStatus = ref(null)
 const orderData = ref(null)
@@ -184,8 +192,18 @@ const errorMessage = ref('')
 const error = ref('')
 const isLoading = ref(false)
 const isProcessing = ref(false)
+const showAddressError = ref(false)
 
-const cardData = ref({
+// Datos de la tarjeta
+const cardData = reactive({
+  numero: '',
+  nombre: '',
+  expiracion: '',
+  cvv: ''
+})
+
+// Errores de validación
+const cardErrors = reactive({
   numero: '',
   nombre: '',
   expiracion: '',
@@ -194,17 +212,22 @@ const cardData = ref({
 
 const direccionEnvio = ref('')
 
+// Computed properties
 const isCardFormValid = computed(() => {
-  return cardData.value.numero.length >= 13 &&
-         cardData.value.nombre.length >= 3 &&
-         cardData.value.expiracion.length === 5 &&
-         cardData.value.cvv.length >= 3
+  const cleanCardNumber = cardData.numero.replace(/\s/g, '')
+  return cleanCardNumber.length >= 13 &&
+         cardData.nombre.trim().length >= 3 &&
+         cardData.expiracion.length === 5 &&
+         cardData.cvv.length >= 3 &&
+         direccionEnvio.value.trim().length > 0
 })
 
+// Métodos
 const formatCardNumber = (event) => {
   let value = event.target.value.replace(/\D/g, '')
   value = value.replace(/(\d{4})(?=\d)/g, '$1 ')
-  cardData.value.numero = value
+  cardData.numero = value
+  validateCardField('numero', value.replace(/\s/g, ''))
 }
 
 const formatExpiry = (event) => {
@@ -212,7 +235,49 @@ const formatExpiry = (event) => {
   if (value.length >= 2) {
     value = value.substring(0, 2) + '/' + value.substring(2, 4)
   }
-  cardData.value.expiracion = value
+  cardData.expiracion = value
+  validateCardField('expiracion', value)
+}
+
+const validateCardField = (field, value) => {
+  switch (field) {
+    case 'numero':
+      const cleanNumber = value.replace(/\s/g, '')
+      cardErrors.numero = cleanNumber.length >= 13 && cleanNumber.length <= 19 ? '' : 'Número de tarjeta inválido (13-19 dígitos)'
+      break
+    case 'nombre':
+      cardErrors.nombre = value.trim().length >= 3 ? '' : 'Nombre debe tener al menos 3 caracteres'
+      break
+    case 'expiracion':
+      const regex = /^\d{2}\/\d{2}$/
+      cardErrors.expiracion = regex.test(value) ? '' : 'Formato MM/AA requerido'
+      break
+    case 'cvv':
+      cardErrors.cvv = value.length >= 3 && value.length <= 4 ? '' : 'CVV debe tener 3-4 dígitos'
+      break
+  }
+}
+
+const getLastFourDigits = (cardNumber) => {
+  const cleanNumber = cardNumber.replace(/\s/g, '')
+  return cleanNumber.slice(-4)
+}
+
+const validateAndContinue = () => {
+  // Validar todos los campos
+  validateCardField('numero', cardData.numero)
+  validateCardField('nombre', cardData.nombre)
+  validateCardField('expiracion', cardData.expiracion)
+  validateCardField('cvv', cardData.cvv)
+  
+  // Validar dirección
+  showAddressError.value = !direccionEnvio.value.trim()
+
+  // Si no hay errores, continuar
+  const hasErrors = Object.values(cardErrors).some(error => error) || showAddressError.value
+  if (!hasErrors) {
+    step.value = 3
+  }
 }
 
 const fetchPaymentData = async () => {
@@ -220,13 +285,14 @@ const fetchPaymentData = async () => {
     isLoading.value = true
     error.value = ''
     
-    const response = await authStore.authenticatedFetch('http://localhost:3000/api/pago/datos')
-    const data = await response.json()
+    const response = await authStore.authenticatedFetch('http://localhost:4000/api/pago/datos')
     
     if (!response.ok) {
-      throw new Error(data.error || 'Error al cargar datos de pago')
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Error al cargar datos de pago')
     }
     
+    const data = await response.json()
     orderData.value = data
     direccionEnvio.value = data.usuario?.direccion || ''
     
@@ -247,28 +313,33 @@ const processPayment = async () => {
     const paymentData = {
       carritoId: orderData.value.carritoId,
       datosTarjeta: {
-        numero: cardData.value.numero.replace(/\s/g, ''),
-        nombre: cardData.value.nombre,
-        expiracion: cardData.value.expiracion,
-        cvv: cardData.value.cvv
+        numero: cardData.numero.replace(/\s/g, ''),
+        nombre: cardData.nombre.trim(),
+        expiracion: cardData.expiracion,
+        cvv: cardData.cvv
       },
-      direccionEnvio: direccionEnvio.value
+      direccionEnvio: direccionEnvio.value.trim()
     }
 
-    const response = await authStore.authenticatedFetch('http://localhost:3000/api/pago/procesar', {
+    const response = await authStore.authenticatedFetch('http://localhost:4000/api/pago/procesar', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(paymentData)
     })
 
-    const data = await response.json()
-    
     if (!response.ok) {
-      throw new Error(data.error || 'Error al procesar el pago')
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Error al procesar el pago')
     }
+
+    const data = await response.json()
     
     paymentStatus.value = 'success'
     paymentResult.value = data
     
+    // Actualizar carrito después del pago exitoso
     await cartStore.fetchCart()
     
   } catch (err) {
@@ -288,13 +359,30 @@ const retryPayment = () => {
   paymentStatus.value = null
   errorMessage.value = ''
   step.value = 3
+  isProcessing.value = false
 }
 
 const finishPayment = () => {
   router.push('/')
 }
 
+// Watchers para validación en tiempo real
+watch(() => cardData.nombre, (value) => {
+  validateCardField('nombre', value)
+})
+
+watch(() => cardData.cvv, (value) => {
+  validateCardField('cvv', value)
+})
+
 onMounted(async () => {
+  // Verificar autenticación
+  if (!authStore.isAuthenticated) {
+    router.push('/login')
+    return
+  }
+
+  // Verificar carrito
   if (!cartStore.items.length) {
     await cartStore.fetchCart()
   }
@@ -446,6 +534,12 @@ h3, h4 {
   outline: none;
 }
 
+.error-text {
+  color: #ff4444;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
 .form-row {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -547,11 +641,11 @@ h3, h4 {
 }
 
 .success-icon {
-  color: #ff2d87;
+  color: #28a745;
 }
 
 .error-icon {
-  color: #333;
+  color: #dc3545;
 }
 
 .receipt {
@@ -564,7 +658,7 @@ h3, h4 {
 }
 
 .error-message {
-  color: #ff2d87;
+  color: #dc3545;
   margin: 1.5rem 0;
   font-weight: 500;
 }
@@ -584,6 +678,26 @@ h3, h4 {
 .error-state .error-icon {
   font-size: 3rem;
   margin-bottom: 1.5rem;
-  color: #ff2d87;
+  color: #dc3545;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .payment-container {
+    margin: 1rem;
+    padding: 1rem;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .btn {
+    width: 100%;
+  }
 }
 </style>

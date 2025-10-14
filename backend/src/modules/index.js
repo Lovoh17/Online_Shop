@@ -1,4 +1,5 @@
 export { default as CategoriaRoutes } from './Categoria/Categoria.routes.js';
+export { default as Pago } from './Pagos/Pago.routes.js';
 export { default as CarritoRoutes} from './Carrito/Carrito.routes.js';
 export { default as UsuarioRoutes} from './Usuario/Usuario.routes.js';
 export { default as ProductosRoutes} from './Producto/Producto.routes.js';
