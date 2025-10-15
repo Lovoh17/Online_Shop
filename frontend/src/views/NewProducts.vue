@@ -614,12 +614,6 @@ onMounted(() => {
                   <span class="bg-gradient-to-r from-[#D8C69E] to-[#C5B38E] text-[#1E3A34] text-xs px-3 py-1.5 font-black rounded shadow-md">
                     NEW
                   </span>
-                  <span 
-                    v-if="producto.descuento > 0"
-                    class="bg-[#E57C23] text-white text-xs px-2 py-1 font-bold rounded"
-                  >
-                    -{{ producto.descuento }}%
-                  </span>
                 </div>
                 
                 <!-- Rating Badge -->

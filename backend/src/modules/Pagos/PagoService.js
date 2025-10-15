@@ -1,4 +1,4 @@
-
+// services/PagoService.js
 import { ObjectId } from "mongodb";
 
 export class PagoService {
@@ -15,15 +15,15 @@ export class PagoService {
                 usuarioId: new ObjectId(usuarioId)
             });
 
-            console.log('📦 Carrito encontrado:', carrito);
+            console.log('📦 Carrito encontrado:', carrito ? `Con ${carrito.items?.length || 0} items` : 'No encontrado');
 
             if (!carrito || !carrito.items || carrito.items.length === 0) {
                 throw new Error('Carrito vacío');
             }
 
             // 2. Obtener información actualizada de productos y verificar stock
-            const itemsConProductos = [];
-            let total = 0;
+            const productosParaPedido = [];
+            let subtotal = 0;
 
             for (const item of carrito.items) {
                 const producto = await this.db.collection('productos').findOne({
@@ -38,19 +38,18 @@ export class PagoService {
                     throw new Error(`Stock insuficiente para ${producto.nombre}. Disponible: ${producto.stock}, Solicitado: ${item.cantidad}`);
                 }
 
-                const subtotal = producto.precio * item.cantidad;
-                total += subtotal;
+                const itemSubtotal = producto.precio * item.cantidad;
+                subtotal += itemSubtotal;
 
-                itemsConProductos.push({
-                    producto: {
-                        _id: producto._id,
-                        nombre: producto.nombre,
-                        precio: producto.precio,
-                        imagen: producto.imagen,
-                        descripcion: producto.descripcion
-                    },
+                // Estructura que espera la base de datos
+                productosParaPedido.push({
+                    productoId: producto._id,
+                    nombreProducto: producto.nombre,
                     cantidad: item.cantidad,
-                    subtotal: subtotal
+                    precioUnitario: producto.precio,
+                    talle: item.talle || 'Único', // Si no hay talle en el carrito, usar 'Único'
+                    color: item.color || 'No especificado', // Si no hay color en el carrito
+                    subtotal: itemSubtotal
                 });
             }
 
@@ -66,15 +65,20 @@ export class PagoService {
                 }
             });
 
-            console.log('💰 Total calculado:', total);
+            // Calcular totales según la estructura esperada
+            const impuestos = subtotal * 0.16; // 16% de IVA
+            const envio = 0; // Envío gratuito
+            const total = subtotal + impuestos + envio;
+
+            console.log('💰 Totales calculados:', { subtotal, impuestos, envio, total });
 
             return {
                 carritoId: carrito._id.toString(),
-                items: itemsConProductos,
+                productos: productosParaPedido, // Cambiado de 'items' a 'productos'
+                subtotal: subtotal,
+                impuestos: impuestos,
+                envio: envio,
                 total: total,
-                subtotal: total,
-                impuestos: total * 0.16, // 16% de IVA
-                totalFinal: total * 1.16,
                 usuario: usuario || {},
                 fechaSolicitud: new Date()
             };
@@ -86,15 +90,22 @@ export class PagoService {
     }
 
     async procesarPago(pagoData) {
-        const session = this.db.client.startSession();
-        
+        let session;
         try {
-            session.startTransaction();
-            console.log('💳 Iniciando procesamiento de pago:', pagoData.carritoId);
+            // Verificar que la base de datos está conectada
+            if (!this.db.client) {
+                throw new Error('Base de datos no conectada');
+            }
+
+            session = this.db.client.startSession();
+            console.log('💳 Iniciando procesamiento de pago para usuario:', pagoData.usuarioId);
 
             const { carritoId, datosTarjeta, direccionEnvio, usuarioId } = pagoData;
 
-            // 1. Verificar que el carrito aún existe y tiene items
+            await session.startTransaction();
+            console.log('🔐 Transacción iniciada');
+
+            // 1. Verificar que el carrito existe y pertenece al usuario
             const carrito = await this.db.collection('carritos').findOne({
                 _id: new ObjectId(carritoId),
                 usuarioId: new ObjectId(usuarioId)
@@ -108,11 +119,11 @@ export class PagoService {
                 throw new Error('Carrito vacío');
             }
 
-            console.log('📋 Verificando stock de productos...');
+            console.log('📋 Verificando stock de', carrito.items.length, 'productos...');
 
-            // 2. Verificar stock de productos y calcular total
-            let total = 0;
-            const itemsParaPedido = [];
+            // 2. Verificar stock y calcular total
+            let subtotal = 0;
+            const productosParaPedido = [];
 
             for (const item of carrito.items) {
                 const producto = await this.db.collection('productos').findOne({
@@ -124,25 +135,24 @@ export class PagoService {
                 }
 
                 if (producto.stock < item.cantidad) {
-                    throw new Error(`Stock insuficiente para ${producto.nombre}. Disponible: ${producto.stock}, Solicitado: ${item.cantidad}`);
+                    throw new Error(`Stock insuficiente para ${producto.nombre}`);
                 }
 
-                const subtotal = producto.precio * item.cantidad;
-                total += subtotal;
+                const itemSubtotal = producto.precio * item.cantidad;
+                subtotal += itemSubtotal;
 
-                itemsParaPedido.push({
-                    producto: {
-                        _id: producto._id,
-                        nombre: producto.nombre,
-                        precio: producto.precio,
-                        imagen: producto.imagen,
-                        descripcion: producto.descripcion
-                    },
+                // Estructura que espera la base de datos
+                productosParaPedido.push({
+                    productoId: producto._id,
+                    nombreProducto: producto.nombre,
                     cantidad: item.cantidad,
-                    subtotal: subtotal
+                    precioUnitario: producto.precio,
+                    talle: item.talle || 'Único', // Si no hay talle en el carrito
+                    color: item.color || 'No especificado', // Si no hay color en el carrito
+                    subtotal: itemSubtotal
                 });
 
-                // 3. Actualizar stock de productos
+                // Actualizar stock
                 await this.db.collection('productos').updateOne(
                     { _id: producto._id },
                     { $inc: { stock: -item.cantidad } },
@@ -150,9 +160,11 @@ export class PagoService {
                 );
             }
 
-            // 4. Simular procesamiento con pasarela de pago
-            console.log('🔐 Procesando pago con tarjeta...');
-            const resultadoPago = await this.simularProcesamientoTarjeta(datosTarjeta, total);
+            console.log('✅ Stock verificado, subtotal:', subtotal);
+
+            // 3. Procesar pago
+            console.log('🔐 Procesando pago...');
+            const resultadoPago = await this.simularProcesamientoTarjeta(datosTarjeta, subtotal);
 
             if (!resultadoPago.exitoso) {
                 throw new Error(`Pago rechazado: ${resultadoPago.mensaje}`);
@@ -160,38 +172,39 @@ export class PagoService {
 
             console.log('✅ Pago aprobado, creando pedido...');
 
-            // 5. Crear pedido
+            // 4. Crear pedido con la estructura que espera la base de datos
+            const impuestos = subtotal * 0.16;
+            const envio = 0;
+            const total = subtotal + impuestos + envio;
+
+            // Parsear la dirección de envío (asumiendo que viene como string simple)
+            const direccionParseada = this.parsearDireccionEnvio(direccionEnvio);
+
             const pedido = {
                 usuarioId: new ObjectId(usuarioId),
-                items: itemsParaPedido,
+                productos: productosParaPedido, // Array de productos con la estructura correcta
+                subtotal: subtotal,
+                impuestos: impuestos,
+                envio: envio,
                 total: total,
-                subtotal: total,
-                impuestos: total * 0.16,
-                totalFinal: total * 1.16,
-                direccionEnvio: direccionEnvio,
+                direccionEnvio: direccionParseada,
+                estado: 'confirmado', // Estado inicial
+                fechaPedido: new Date(),
+                fechaEstimadaEntrega: this.calcularFechaEstimadaEntrega(),
                 metodoPago: 'tarjeta',
-                datosPago: {
-                    referencia: resultadoPago.referencia,
-                    ultimosDigitos: datosTarjeta.numero.slice(-4),
-                    tipo: 'tarjeta_credito'
-                },
-                estado: 'confirmado',
-                numeroPedido: await this.generarNumeroPedido(session),
-                fechaCreacion: new Date(),
-                fechaActualizacion: new Date(),
-                historialEstados: [{
-                    estado: 'confirmado',
-                    fecha: new Date(),
-                    notas: 'Pedido creado y pagado exitosamente'
-                }]
+                numeroSeguimiento: await this.generarNumeroSeguimiento(),
+                notas: 'Pedido creado automáticamente desde el proceso de pago'
             };
 
             const resultadoPedido = await this.db.collection('pedidos').insertOne(pedido, { session });
+            console.log('📦 Pedido creado con ID:', resultadoPedido.insertedId);
 
-            // 6. Vaciar carrito
-            await this.db.collection('carritos').deleteOne({
+            // 5. Vaciar carrito
+            const resultadoEliminacion = await this.db.collection('carritos').deleteOne({
                 _id: new ObjectId(carritoId)
             }, { session });
+
+            console.log('🗑️ Carrito eliminado:', resultadoEliminacion.deletedCount, 'documentos');
 
             await session.commitTransaction();
             console.log('🎉 Transacción completada exitosamente');
@@ -199,89 +212,141 @@ export class PagoService {
             return {
                 success: true,
                 ordenId: resultadoPedido.insertedId.toString(),
-                numeroPedido: pedido.numeroPedido,
+                numeroPedido: resultadoPedido.insertedId.toString(), // Usar el ID como número de pedido temporal
                 referencia: resultadoPago.referencia,
-                total: pedido.totalFinal,
+                total: total,
                 fecha: new Date(),
                 mensaje: 'Pago procesado exitosamente'
             };
 
         } catch (error) {
-            await session.abortTransaction();
             console.error('❌ Error en PagoService.procesarPago:', error);
+            
+            if (session) {
+                try {
+                    await session.abortTransaction();
+                    console.log('🔄 Transacción abortada');
+                } catch (abortError) {
+                    console.error('Error al abortar transacción:', abortError);
+                }
+            }
+            
             throw error;
         } finally {
-            await session.endSession();
+            if (session) {
+                try {
+                    await session.endSession();
+                    console.log('🔚 Sesión finalizada');
+                } catch (endError) {
+                    console.error('Error al finalizar sesión:', endError);
+                }
+            }
         }
+    }
+
+    parsearDireccionEnvio(direccionString) {
+        // Si la dirección ya es un objeto, devolverlo directamente
+        if (typeof direccionString === 'object') {
+            return direccionString;
+        }
+
+        // Si es un string, intentar parsearlo o crear estructura básica
+        try {
+            // Intentar parsear como JSON
+            return JSON.parse(direccionString);
+        } catch (e) {
+            // Si no es JSON válido, crear estructura básica
+            return {
+                calle: direccionString || 'No especificada',
+                ciudad: 'No especificada',
+                pais: 'No especificado',
+                codigoPostal: '00000',
+                nombreCompleto: 'No especificado',
+                telefono: 'No especificado'
+            };
+        }
+    }
+
+    calcularFechaEstimadaEntrega() {
+        const fecha = new Date();
+        fecha.setDate(fecha.getDate() + 7); // 7 días para entrega estimada
+        return fecha;
+    }
+
+    async generarNumeroSeguimiento() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let resultado = '';
+        for (let i = 0; i < 10; i++) {
+            resultado += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return resultado;
     }
 
     async simularProcesamientoTarjeta(datosTarjeta, total) {
-        // Simular procesamiento con pasarela de pago
-        // En producción, aquí integrarías con Stripe, PayPal, etc.
-        
         return new Promise((resolve) => {
             setTimeout(() => {
-                console.log('💳 Simulando procesamiento de tarjeta...');
+                console.log('💳 Simulando procesamiento de tarjeta para monto:', total);
                 
-                // Simular validaciones básicas
-                const esNumeroValido = /^\d{13,19}$/.test(datosTarjeta.numero);
-                const esCVVValido = /^\d{3,4}$/.test(datosTarjeta.cvv);
+                try {
+                    // Validaciones básicas
+                    const cleanCardNumber = datosTarjeta.numero.replace(/\s/g, '');
+                    const esNumeroValido = /^\d{13,19}$/.test(cleanCardNumber);
+                    const esCVVValido = /^\d{3,4}$/.test(datosTarjeta.cvv);
 
-                if (!esNumeroValido || !esCVVValido) {
+                    console.log('🔍 Validando tarjeta:', {
+                        numeroLength: cleanCardNumber.length,
+                        cvvLength: datosTarjeta.cvv.length,
+                        esNumeroValido,
+                        esCVVValido
+                    });
+
+                    if (!esNumeroValido || !esCVVValido) {
+                        resolve({
+                            exitoso: false,
+                            mensaje: 'Datos de tarjeta inválidos',
+                            referencia: null
+                        });
+                        return;
+                    }
+
+                    // Simular rechazo aleatorio (solo 5% para testing)
+                    const esExitoso = Math.random() > 0.05;
+
+                    const referencia = `PAY-${Date.now()}-${cleanCardNumber.slice(-4)}`;
+                    
+                    console.log('🎲 Resultado simulado:', esExitoso ? 'APROBADO' : 'RECHAZADO');
+                    
+                    resolve({
+                        exitoso: esExitoso,
+                        mensaje: esExitoso ? 'Pago aprobado' : 'Fondos insuficientes',
+                        referencia: referencia
+                    });
+                } catch (error) {
+                    console.error('❌ Error en simulación de pago:', error);
                     resolve({
                         exitoso: false,
-                        mensaje: 'Datos de tarjeta inválidos',
+                        mensaje: 'Error en procesamiento de pago',
                         referencia: null
                     });
-                    return;
                 }
-
-                // Simular rechazo aleatorio (15% de probabilidad para testing)
-                const esExitoso = Math.random() > 0.15;
-
-                const referencia = `PAY-${Date.now()}-${datosTarjeta.numero.slice(-4)}`;
-                
-                resolve({
-                    exitoso: esExitoso,
-                    mensaje: esExitoso ? 'Pago aprobado' : 'Fondos insuficientes',
-                    referencia: referencia
-                });
-            }, 2000); // Simular delay de procesamiento
+            }, 1500);
         });
-    }
-
-    async generarNumeroPedido(session) {
-        const año = new Date().getFullYear();
-        const ultimoPedido = await this.db.collection('pedidos')
-            .find({}, { session })
-            .sort({ numeroPedido: -1 })
-            .limit(1)
-            .toArray();
-
-        let siguienteNumero = 1;
-        if (ultimoPedido.length > 0 && ultimoPedido[0].numeroPedido) {
-            const ultimoNumero = parseInt(ultimoPedido[0].numeroPedido.split('-')[2]);
-            siguienteNumero = ultimoNumero + 1;
-        }
-
-        return `PED-${año}-${siguienteNumero.toString().padStart(6, '0')}`;
     }
 
     async obtenerHistorialPagos(usuarioId) {
         try {
             const pedidos = await this.db.collection('pedidos')
                 .find({ 
-                    usuarioId: new ObjectId(usuarioId),
-                    estado: { $ne: 'cancelado' }
+                    usuarioId: new ObjectId(usuarioId)
                 })
-                .sort({ fechaCreacion: -1 })
+                .sort({ fechaPedido: -1 })
                 .project({
-                    numeroPedido: 1,
-                    totalFinal: 1,
+                    _id: 1,
+                    productos: 1,
+                    total: 1,
                     estado: 1,
-                    fechaCreacion: 1,
-                    metodoPago: 1,
-                    'datosPago.referencia': 1
+                    fechaPedido: 1,
+                    metodoPago: 1
                 })
                 .toArray();
 

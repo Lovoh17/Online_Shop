@@ -255,12 +255,6 @@ const toggleMobileFilters = () => {
                     >
                       NUEVO
                     </span>
-                    <span 
-                      v-if="quickViewProduct.descuento"
-                      class="bg-[#E57C23] text-white text-xs px-3 py-1 font-bold"
-                    >
-                      -{{ quickViewProduct.descuento }}%
-                    </span>
                   </div>
 
                   <!-- Pagination dots -->
@@ -803,12 +797,6 @@ const toggleMobileFilters = () => {
                   class="bg-[#1E3A34] text-white text-xs px-2 py-1 font-bold rounded"
                 >
                   NUEVO
-                </span>
-                <span 
-                  v-if="producto.descuento"
-                  class="bg-[#E57C23] text-white text-xs px-2 py-1 font-bold rounded"
-                >
-                  -{{ producto.descuento }}%
                 </span>
               </div>
               

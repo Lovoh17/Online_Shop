@@ -1,175 +1,345 @@
 <template>
-  <div class="payment-container">
-    <div v-if="isLoading && step === 1" class="loading-state">
-      <div class="spinner"></div>
-      <p>Cargando datos del pago...</p>
+  <div class="min-h-screen bg-[#FFFFFF]">
+    <!-- Imagen Flotante -->
+    <transition name="floating">
+      <div 
+        v-if="showFloatingLogo"
+        class="floating-logo"
+        :style="floatingLogoStyle"
+      >
+        <div class="w-24 h-24 bg-[#1E3A34] shadow-2xl flex items-center justify-center">
+          <svg class="w-12 h-12 text-[#C2B280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+          </svg>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Notificación -->
+    <div 
+      v-if="notification.show"
+      :class="{
+        'bg-[#4F7C63] text-white': notification.type === 'success',
+        'bg-[#E57C23] text-white': notification.type === 'error'
+      }"
+      class="fixed top-0 right-0 z-50 px-8 py-4 shadow-lg transition-all duration-300"
+    >
+      <div class="flex items-center space-x-3">
+        <svg v-if="notification.type === 'success'" class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <svg v-else class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span class="font-bold uppercase tracking-wider">{{ notification.message }}</span>
+      </div>
     </div>
 
-    <div v-else-if="step === 1" class="payment-step">
-      <h2>Resumen de tu compra</h2>
-      <div class="cart-summary">
-        <div v-for="item in orderData?.items || []" :key="item.producto._id" class="cart-item">
-          <img :src="item.producto.imagen" :alt="item.producto.nombre" class="product-image">
-          <div class="product-info">
-            <h3>{{ item.producto.nombre }}</h3>
-            <p>{{ item.cantidad }} x ${{ item.producto.precio.toFixed(2) }}</p>
+    <main class="max-w-6xl mx-auto px-6 py-16">
+      <!-- Header -->
+      <div class="bg-white shadow-lg p-10 mb-10 border-l-8 border-[#1E3A34]">
+        <div class="flex items-center space-x-6 mb-10">
+          <div class="w-16 h-16 bg-[#1E3A34] flex items-center justify-center">
+            <svg class="w-8 h-8 text-[#C2B280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+            </svg>
           </div>
-          <p class="product-total">${{ (item.producto.precio * item.cantidad).toFixed(2) }}</p>
+          <div>
+            <h1 class="text-4xl font-black text-[#1E3A34] tracking-tight uppercase">Proceso de Pago</h1>
+            <p class="text-[#5E5E5E] mt-2 font-bold text-lg">Paso {{ step }} de 4</p>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="space-y-4">
+          <div class="flex justify-between text-sm font-black tracking-widest">
+            <span :class="step >= 1 ? 'text-[#1E3A34]' : 'text-[#5E5E5E]'">RESUMEN</span>
+            <span :class="step >= 2 ? 'text-[#1E3A34]' : 'text-[#5E5E5E]'">PAGO</span>
+            <span :class="step >= 3 ? 'text-[#1E3A34]' : 'text-[#5E5E5E]'">CONFIRMAR</span>
+            <span :class="step >= 4 ? 'text-[#1E3A34]' : 'text-[#5E5E5E]'">FINALIZAR</span>
+          </div>
+          <div class="h-1 bg-[#E5E5E5]">
+            <div 
+              class="h-full bg-[#1E3A34] transition-all duration-500 ease-out"
+              :style="{ width: `${(step / 4) * 100}%` }"
+            ></div>
+          </div>
         </div>
       </div>
-      <div class="total-section">
-        <p>Total: <span>${{ orderData?.total?.toFixed(2) || '0.00' }}</span></p>
-      </div>
-      <div class="action-buttons">
-        <button @click="cancelPayment" class="btn btn-secondary">Cancelar</button>
-        <button @click="step = 2" class="btn btn-primary">Continuar al pago</button>
-      </div>
-    </div>
 
-    <div v-if="step === 2" class="payment-step">
-      <h2>Método de pago</h2>
-      
-      <div class="card-form">
-        <h3>Datos de la tarjeta</h3>
-        <div class="form-group">
-          <label>Número de tarjeta</label>
-          <input 
-            v-model="cardData.numero" 
-            type="text" 
-            placeholder="1234 5678 9012 3456"
-            @input="formatCardNumber"
-            maxlength="19"
+      <!-- Loading State -->
+      <div v-if="isLoading && step === 1" class="bg-white shadow-lg p-20 text-center">
+        <div class="relative w-24 h-24 mx-auto mb-8">
+          <div class="absolute inset-0 border-4 border-[#E5E5E5] animate-spin"></div>
+          <div class="absolute inset-2 border-4 border-t-[#1E3A34] border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
+        </div>
+        <p class="text-[#5E5E5E] font-bold text-xl uppercase tracking-wide">Cargando datos del pago...</p>
+      </div>
+
+      <!-- Step 1: Resumen -->
+      <div v-else-if="step === 1" class="space-y-8">
+        <div class="bg-white shadow-lg border-l-8 border-[#C2B280]">
+          <div class="bg-[#F8F5F0] px-10 py-6 border-b-2 border-[#E5E5E5]">
+            <h2 class="text-3xl font-black text-[#1E3A34] tracking-tight uppercase">Resumen de tu Compra</h2>
+          </div>
+          
+          <div class="divide-y-2 divide-[#E5E5E5]">
+            <div v-for="item in orderData?.items || []" :key="item.producto._id" class="p-8 hover:bg-[#F8F5F0] transition-colors duration-200">
+              <div class="flex items-center space-x-8">
+                <div class="w-28 h-28 bg-[#E5E5E5] flex-shrink-0">
+                  <img :src="item.producto.imagen" :alt="item.producto.nombre" class="w-full h-full object-cover">
+                </div>
+                <div class="flex-1">
+                  <h3 class="font-black text-xl text-[#1E3A34] mb-2 uppercase">{{ item.producto.nombre }}</h3>
+                  <p class="text-[#5E5E5E] font-bold text-lg">{{ item.cantidad }} × ${{ item.producto.precio.toFixed(2) }}</p>
+                </div>
+                <p class="font-black text-3xl text-[#1E3A34]">${{ (item.producto.precio * item.cantidad).toFixed(2) }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-[#1E3A34] px-10 py-8">
+            <div class="flex justify-between items-center">
+              <span class="text-2xl font-black text-white uppercase tracking-widest">Total</span>
+              <span class="text-4xl font-black text-[#C2B280]">${{ orderData?.total?.toFixed(2) || '0.00' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-6">
+          <button @click="cancelPayment" class="flex-1 bg-white text-[#5E5E5E] py-5 px-8 font-black uppercase tracking-widest hover:bg-[#F8F5F0] hover:text-[#1E3A34] transition-colors duration-200 shadow-lg border-2 border-[#E5E5E5]">
+            Cancelar
+          </button>
+          <button @click="step = 2" class="flex-1 bg-[#1E3A34] text-white py-5 px-8 font-black uppercase tracking-widest hover:bg-[#4F7C63] transition-colors duration-200 shadow-lg">
+            Continuar al Pago
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: Datos de pago -->
+      <div v-if="step === 2" class="space-y-8">
+        <div class="bg-white shadow-lg border-l-8 border-[#E57C23]">
+          <div class="bg-[#F8F5F0] px-10 py-6 border-b-2 border-[#E5E5E5]">
+            <h2 class="text-3xl font-black text-[#1E3A34] tracking-tight uppercase">Método de Pago</h2>
+          </div>
+          
+          <div class="p-10">
+            <div class="bg-[#F8F5F0] p-10 border-l-4 border-[#1E3A34]">
+              <h3 class="font-black text-2xl text-[#1E3A34] mb-8 uppercase tracking-wider">Datos de la Tarjeta</h3>
+              
+              <div class="space-y-6">
+                <div>
+                  <label class="block text-sm font-black text-[#1E3A34] mb-3 uppercase tracking-widest">Número de Tarjeta</label>
+                  <input 
+                    v-model="cardData.numero" 
+                    type="text" 
+                    placeholder="1234 5678 9012 3456"
+                    @input="formatCardNumber"
+                    maxlength="19"
+                    class="w-full border-2 border-[#E5E5E5] px-5 py-4 focus:outline-none focus:border-[#1E3A34] bg-white transition-colors font-semibold"
+                  >
+                  <div v-if="cardErrors.numero" class="text-sm font-bold text-[#E57C23] mt-3 uppercase tracking-wide">{{ cardErrors.numero }}</div>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-black text-[#1E3A34] mb-3 uppercase tracking-widest">Nombre en la Tarjeta</label>
+                  <input 
+                    v-model="cardData.nombre" 
+                    type="text" 
+                    placeholder="Como aparece en la tarjeta"
+                    class="w-full border-2 border-[#E5E5E5] px-5 py-4 focus:outline-none focus:border-[#1E3A34] bg-white transition-colors font-semibold"
+                  >
+                  <div v-if="cardErrors.nombre" class="text-sm font-bold text-[#E57C23] mt-3 uppercase tracking-wide">{{ cardErrors.nombre }}</div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-6">
+                  <div>
+                    <label class="block text-sm font-black text-[#1E3A34] mb-3 uppercase tracking-widest">Expiración</label>
+                    <input 
+                      v-model="cardData.expiracion" 
+                      type="text" 
+                      placeholder="MM/AA" 
+                      @input="formatExpiry"
+                      maxlength="5"
+                      class="w-full border-2 border-[#E5E5E5] px-5 py-4 focus:outline-none focus:border-[#1E3A34] bg-white transition-colors font-semibold"
+                    >
+                    <div v-if="cardErrors.expiracion" class="text-sm font-bold text-[#E57C23] mt-3 uppercase tracking-wide">{{ cardErrors.expiracion }}</div>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-black text-[#1E3A34] mb-3 uppercase tracking-widest">CVV</label>
+                    <input 
+                      v-model="cardData.cvv" 
+                      type="password" 
+                      placeholder="123" 
+                      maxlength="4"
+                      class="w-full border-2 border-[#E5E5E5] px-5 py-4 focus:outline-none focus:border-[#1E3A34] bg-white transition-colors font-semibold"
+                    >
+                    <div v-if="cardErrors.cvv" class="text-sm font-bold text-[#E57C23] mt-3 uppercase tracking-wide">{{ cardErrors.cvv }}</div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-black text-[#1E3A34] mb-3 uppercase tracking-widest">Dirección de Envío</label>
+                  <textarea 
+                    v-model="direccionEnvio" 
+                    placeholder="Ingresa tu dirección completa"
+                    rows="4"
+                    class="w-full border-2 border-[#E5E5E5] px-5 py-4 focus:outline-none focus:border-[#1E3A34] bg-white transition-colors resize-none font-semibold"
+                  ></textarea>
+                  <div v-if="!direccionEnvio && showAddressError" class="text-sm font-bold text-[#E57C23] mt-3 uppercase tracking-wide">La dirección de envío es requerida</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-6">
+          <button @click="step = 1" class="flex-1 bg-white text-[#5E5E5E] py-5 px-8 font-black uppercase tracking-widest hover:bg-[#F8F5F0] hover:text-[#1E3A34] transition-colors duration-200 shadow-lg border-2 border-[#E5E5E5]">
+            Volver
+          </button>
+          <button @click="validateAndContinue" class="flex-1 bg-[#1E3A34] text-white py-5 px-8 font-black uppercase tracking-widest hover:bg-[#4F7C63] transition-colors duration-200 shadow-lg">
+            Continuar
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Confirmación -->
+      <div v-if="step === 3" class="space-y-8">
+        <div class="bg-white shadow-lg border-l-8 border-[#4F7C63]">
+          <div class="bg-[#F8F5F0] px-10 py-6 border-b-2 border-[#E5E5E5]">
+            <h2 class="text-3xl font-black text-[#1E3A34] tracking-tight uppercase">Confirma tu Pago</h2>
+          </div>
+          
+          <div class="p-10 space-y-6">
+            <div class="bg-[#F8F5F0] p-8 border-l-4 border-[#C2B280]">
+              <h4 class="font-black text-xl text-[#1E3A34] mb-4 uppercase tracking-wider">Resumen de la Compra</h4>
+              <p class="text-[#5E5E5E] mb-3 font-bold text-lg">{{ orderData?.items?.length || 0 }} productos</p>
+              <p class="font-black text-3xl text-[#1E3A34]">TOTAL: ${{ orderData?.total?.toFixed(2) || '0.00' }}</p>
+            </div>
+            
+            <div class="bg-[#F8F5F0] p-8 border-l-4 border-[#E57C23]">
+              <h4 class="font-black text-xl text-[#1E3A34] mb-4 uppercase tracking-wider">Método de Pago</h4>
+              <p class="text-[#5E5E5E] font-bold text-lg mb-2">**** **** **** {{ getLastFourDigits(cardData.numero) }}</p>
+              <p class="text-[#5E5E5E] font-bold text-lg">{{ cardData.nombre }}</p>
+            </div>
+
+            <div class="bg-[#F8F5F0] p-8 border-l-4 border-[#7CAFBF]">
+              <h4 class="font-black text-xl text-[#1E3A34] mb-4 uppercase tracking-wider">Dirección de Envío</h4>
+              <p class="text-[#5E5E5E] font-bold text-lg">{{ direccionEnvio || orderData?.usuario?.direccion || 'No especificada' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-6">
+          <button @click="step = 2" class="flex-1 bg-white text-[#5E5E5E] py-5 px-8 font-black uppercase tracking-widest hover:bg-[#F8F5F0] hover:text-[#1E3A34] transition-colors duration-200 shadow-lg border-2 border-[#E5E5E5]">
+            Cambiar Datos
+          </button>
+          <button 
+            @click="processPayment" 
+            :disabled="isProcessing"
+            :class="{
+              'bg-[#1E3A34] hover:bg-[#4F7C63]': !isProcessing,
+              'bg-[#5E5E5E] cursor-not-allowed': isProcessing
+            }"
+            class="flex-1 text-white py-5 px-8 font-black uppercase tracking-widest transition-colors duration-200 shadow-lg"
           >
-          <div v-if="cardErrors.numero" class="error-text">{{ cardErrors.numero }}</div>
+            {{ isProcessing ? 'PROCESANDO...' : 'PAGAR AHORA' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 4: Resultado -->
+      <div v-if="step === 4" class="bg-white shadow-lg">
+        <!-- Processing -->
+        <div v-if="paymentStatus === 'processing'" class="p-20 text-center">
+          <div class="relative w-28 h-28 mx-auto mb-10">
+            <div class="absolute inset-0 border-4 border-[#E5E5E5] animate-spin"></div>
+            <div class="absolute inset-2 border-4 border-t-[#1E3A34] border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
+          </div>
+          <p class="text-[#1E3A34] font-black text-3xl mb-3 uppercase tracking-tight">Procesando tu pago...</p>
+          <p class="text-[#5E5E5E] font-bold text-lg uppercase tracking-wide">No cierres esta ventana</p>
         </div>
         
-        <div class="form-group">
-          <label>Nombre en la tarjeta</label>
-          <input 
-            v-model="cardData.nombre" 
-            type="text" 
-            placeholder="Como aparece en la tarjeta"
-          >
-          <div v-if="cardErrors.nombre" class="error-text">{{ cardErrors.nombre }}</div>
+        <!-- Success -->
+        <div v-if="paymentStatus === 'success'" class="p-20 text-center">
+          <div class="w-28 h-28 bg-[#4F7C63] flex items-center justify-center mx-auto mb-10 shadow-lg">
+            <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <h2 class="text-5xl font-black text-[#1E3A34] mb-8 uppercase tracking-tight">Pago Aprobado</h2>
+          
+          <div class="bg-[#F8F5F0] p-6 mb-8 border-l-4 border-[#4F7C63]">
+            <p class="text-base text-[#5E5E5E] flex items-center justify-center font-bold">
+              <svg class="w-6 h-6 inline-block mr-3 text-[#1E3A34]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+              </svg>
+              <span v-if="emailSent">Hemos enviado tu factura a: <span class="font-black text-[#1E3A34]">{{ orderData?.usuario?.email }}</span></span>
+              <span v-else class="text-[#E57C23] font-black">No se pudo enviar el correo automáticamente. Por favor contacta soporte.</span>
+            </p>
+          </div>
+          
+          <div class="bg-[#F8F5F0] p-10 text-left border-l-4 border-[#C2B280] mb-10">
+            <div class="space-y-4">
+              <div class="flex justify-between items-center py-3 border-b-2 border-[#E5E5E5]">
+                <span class="font-black text-[#1E3A34] uppercase tracking-widest text-lg">Referencia:</span>
+                <span class="text-[#5E5E5E] font-mono font-bold text-lg">{{ paymentResult.referencia }}</span>
+              </div>
+              <div class="flex justify-between items-center py-3 border-b-2 border-[#E5E5E5]">
+                <span class="font-black text-[#1E3A34] uppercase tracking-widest text-lg">Fecha:</span>
+                <span class="text-[#5E5E5E] font-bold text-lg">{{ new Date().toLocaleDateString() }}</span>
+              </div>
+              <div class="flex justify-between items-center py-3 border-b-2 border-[#E5E5E5]">
+                <span class="font-black text-[#1E3A34] uppercase tracking-widest text-lg">Total:</span>
+                <span class="text-[#1E3A34] font-black text-2xl">${{ paymentResult.total?.toFixed(2) }}</span>
+              </div>
+              <div class="flex justify-between items-center py-3">
+                <span class="font-black text-[#1E3A34] uppercase tracking-widest text-lg">Orden:</span>
+                <span class="text-[#5E5E5E] font-mono font-bold text-lg">#{{ paymentResult.ordenId }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <button @click="finishPayment" class="bg-[#1E3A34] text-white px-14 py-5 font-black uppercase tracking-widest hover:bg-[#4F7C63] transition-colors duration-200 shadow-lg text-lg">
+            Continuar Comprando
+          </button>
         </div>
         
-        <div class="form-row">
-          <div class="form-group">
-            <label>Fecha de expiración</label>
-            <input 
-              v-model="cardData.expiracion" 
-              type="text" 
-              placeholder="MM/AA" 
-              @input="formatExpiry"
-              maxlength="5"
-            >
-            <div v-if="cardErrors.expiracion" class="error-text">{{ cardErrors.expiracion }}</div>
+        <!-- Error -->
+        <div v-if="paymentStatus === 'error'" class="p-20 text-center">
+          <div class="w-28 h-28 bg-[#E57C23] flex items-center justify-center mx-auto mb-10 shadow-lg">
+            <svg class="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
           </div>
-          <div class="form-group">
-            <label>CVV</label>
-            <input 
-              v-model="cardData.cvv" 
-              type="password" 
-              placeholder="123" 
-              maxlength="4"
-            >
-            <div v-if="cardErrors.cvv" class="error-text">{{ cardErrors.cvv }}</div>
+          <h2 class="text-5xl font-black text-[#1E3A34] mb-6 uppercase tracking-tight">Pago Rechazado</h2>
+          <p class="text-[#E57C23] font-black mb-12 text-xl uppercase tracking-wide">{{ errorMessage }}</p>
+          
+          <div class="flex gap-6 justify-center">
+            <button @click="retryPayment" class="bg-[#1E3A34] text-white px-12 py-5 font-black uppercase tracking-widest hover:bg-[#4F7C63] transition-colors duration-200 shadow-lg">
+              Reintentar
+            </button>
+            <button @click="step = 2" class="bg-white text-[#5E5E5E] px-12 py-5 font-black uppercase tracking-widest hover:bg-[#F8F5F0] hover:text-[#1E3A34] transition-colors duration-200 shadow-lg border-2 border-[#E5E5E5]">
+              Cambiar Método
+            </button>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label>Dirección de envío</label>
-          <textarea 
-            v-model="direccionEnvio" 
-            placeholder="Ingresa tu dirección completa"
-            rows="3"
-          ></textarea>
-          <div v-if="!direccionEnvio && showAddressError" class="error-text">La dirección de envío es requerida</div>
         </div>
       </div>
 
-      <div class="action-buttons">
-        <button @click="step = 1" class="btn btn-secondary">Volver</button>
-        <button 
-          @click="validateAndContinue" 
-          class="btn btn-primary"
-        >
-          Continuar
+      <!-- Error State -->
+      <div v-if="error && !isLoading" class="bg-white shadow-lg p-20 text-center border-l-8 border-[#E57C23]">
+        <div class="w-28 h-28 bg-[#E57C23] bg-opacity-20 flex items-center justify-center mx-auto mb-10">
+          <svg class="w-16 h-16 text-[#E57C23]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <h2 class="text-4xl font-black text-[#1E3A34] mb-6 uppercase tracking-tight">Error al Cargar</h2>
+        <p class="text-[#5E5E5E] mb-10 text-xl font-bold">{{ error }}</p>
+        <button @click="cancelPayment" class="bg-white text-[#5E5E5E] px-12 py-5 font-black uppercase tracking-widest hover:bg-[#F8F5F0] hover:text-[#1E3A34] transition-colors duration-200 shadow-lg border-2 border-[#E5E5E5]">
+          Volver al Carrito
         </button>
       </div>
-    </div>
-
-    <div v-if="step === 3" class="payment-step">
-      <h2>Confirma tu pago</h2>
-      <div class="payment-confirmation">
-        <div class="confirmation-section">
-          <h4>Resumen de la compra</h4>
-          <p>{{ orderData?.items?.length || 0 }} productos</p>
-          <p><strong>Total: ${{ orderData?.total?.toFixed(2) || '0.00' }}</strong></p>
-        </div>
-        
-        <div class="confirmation-section">
-          <h4>Método de pago</h4>
-          <p>**** **** **** {{ getLastFourDigits(cardData.numero) }}</p>
-          <p>{{ cardData.nombre }}</p>
-        </div>
-
-        <div class="confirmation-section">
-          <h4>Dirección de envío</h4>
-          <p>{{ direccionEnvio || orderData?.usuario?.direccion || 'No especificada' }}</p>
-        </div>
-      </div>
-      
-      <div class="action-buttons">
-        <button @click="step = 2" class="btn btn-secondary">Cambiar datos</button>
-        <button 
-          @click="processPayment" 
-          class="btn btn-primary"
-          :disabled="isProcessing"
-        >
-          {{ isProcessing ? 'Procesando...' : 'Pagar ahora' }}
-        </button>
-      </div>
-    </div>
-
-    <div v-if="step === 4" class="payment-step">
-      <div v-if="paymentStatus === 'processing'" class="processing-payment">
-        <div class="spinner"></div>
-        <p>Procesando tu pago...</p>
-        <p class="processing-note">No cierres esta ventana</p>
-      </div>
-      
-      <div v-if="paymentStatus === 'success'" class="payment-success">
-        <div class="success-icon">✅</div>
-        <h2>¡Pago aprobado!</h2>
-        <div class="receipt">
-          <p><strong>Referencia:</strong> {{ paymentResult.referencia }}</p>
-          <p><strong>Fecha:</strong> {{ new Date().toLocaleDateString() }}</p>
-          <p><strong>Total:</strong> ${{ paymentResult.total?.toFixed(2) }}</p>
-          <p><strong>Orden:</strong> #{{ paymentResult.ordenId }}</p>
-        </div>
-        <div class="action-buttons">
-          <button @click="finishPayment" class="btn btn-primary">Continuar comprando</button>
-        </div>
-      </div>
-      
-      <div v-if="paymentStatus === 'error'" class="payment-error">
-        <div class="error-icon">❌</div>
-        <h2>Pago rechazado</h2>
-        <p class="error-message">{{ errorMessage }}</p>
-        <div class="action-buttons">
-          <button @click="retryPayment" class="btn btn-primary">Reintentar</button>
-          <button @click="step = 2" class="btn btn-secondary">Cambiar método</button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="error && !isLoading" class="error-state">
-      <div class="error-icon">⚠️</div>
-      <h2>Error al cargar</h2>
-      <p>{{ error }}</p>
-      <button @click="cancelPayment" class="btn btn-secondary">Volver al carrito</button>
-    </div>
+    </main>
   </div>
 </template>
 
@@ -183,6 +353,10 @@ const cartStore = useCartStore()
 const authStore = useAuthStore()
 const router = useRouter()
 
+// Logo flotante
+const showFloatingLogo = ref(false)
+const floatingLogoStyle = ref({})
+
 // Estados reactivos
 const step = ref(1)
 const paymentStatus = ref(null)
@@ -193,6 +367,8 @@ const error = ref('')
 const isLoading = ref(false)
 const isProcessing = ref(false)
 const showAddressError = ref(false)
+const notification = ref({ show: false, message: '', type: 'success' })
+const emailSent = ref(true)
 
 // Datos de la tarjeta
 const cardData = reactive({
@@ -293,7 +469,13 @@ const fetchPaymentData = async () => {
     }
     
     const data = await response.json()
+    
     orderData.value = data
+    
+    if (data.productos && data.productos.length > 0) {
+      console.log('📦 Productos recibidos:', data.productos)
+    }
+    
     direccionEnvio.value = data.usuario?.direccion || ''
     
   } catch (err) {
@@ -310,6 +492,11 @@ const processPayment = async () => {
     paymentStatus.value = 'processing'
     step.value = 4
     
+    console.log('📤 Enviando datos de pago:', {
+      carritoId: orderData.value.carritoId,
+      direccionEnvio: direccionEnvio.value
+    })
+
     const paymentData = {
       carritoId: orderData.value.carritoId,
       datosTarjeta: {
@@ -339,7 +526,6 @@ const processPayment = async () => {
     paymentStatus.value = 'success'
     paymentResult.value = data
     
-    // Actualizar carrito después del pago exitoso
     await cartStore.fetchCart()
     
   } catch (err) {
@@ -376,6 +562,17 @@ watch(() => cardData.cvv, (value) => {
 })
 
 onMounted(async () => {
+  // Logo flotante
+  showFloatingLogo.value = true
+  floatingLogoStyle.value = {
+    left: `${Math.random() * 80 + 10}%`,
+    top: '-10%'
+  }
+  
+  setTimeout(() => {
+    showFloatingLogo.value = false
+  }, 3500)
+
   // Verificar autenticación
   if (!authStore.isAuthenticated) {
     router.push('/login')
@@ -397,307 +594,66 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.payment-container {
-  max-width: 600px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 20px rgba(0,0,0,0.08);
-  font-family: 'Arial', sans-serif;
+/* Animación logo flotante */
+.floating-logo {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  animation: floatDown 3.5s ease-out forwards;
 }
 
-.payment-step {
-  animation: slideIn 0.3s ease-in-out;
+@keyframes floatDown {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(0.5);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(10vh) rotate(15deg) scale(1);
+  }
+  50% {
+    transform: translateY(50vh) rotate(180deg) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(120vh) rotate(360deg) scale(0.8);
+    opacity: 0;
+  }
 }
 
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
+.floating-enter-active {
+  animation: floatDown 3.5s ease-out;
 }
 
-h2 {
-  color: #ff2d87;
-  font-size: 1.8rem;
-  margin-bottom: 1.5rem;
-  font-weight: 700;
-  text-align: center;
+.floating-leave-active {
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
-h3, h4 {
-  color: #333;
-  font-weight: 600;
-}
-
-.cart-summary {
-  margin: 1.5rem 0;
-  border: 1px solid #f0f0f0;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.cart-item {
-  display: flex;
-  align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid #f0f0f0;
-  transition: background 0.2s;
-}
-
-.cart-item:last-child {
-  border-bottom: none;
-}
-
-.cart-item:hover {
-  background: #fff9fb;
-}
-
-.product-image {
-  width: 70px;
-  height: 70px;
-  object-fit: cover;
-  border-radius: 4px;
-  margin-right: 1rem;
-  border: 1px solid #f0f0f0;
-}
-
-.product-info {
-  flex: 1;
-}
-
-.product-info h3 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1rem;
-  color: #333;
-}
-
-.product-total {
-  font-weight: bold;
-  color: #ff2d87;
-  font-size: 1.1rem;
-}
-
-.total-section {
-  text-align: right;
-  padding: 1.2rem;
-  background: #fff9fb;
-  border-radius: 8px;
-  margin: 1.5rem 0;
-  font-size: 1.1rem;
-}
-
-.total-section span {
-  font-size: 1.3rem;
-  font-weight: bold;
-  color: #ff2d87;
-}
-
-.card-form {
-  margin: 1.5rem 0;
-  background: #fff9fb;
-  padding: 1.5rem;
-  border-radius: 8px;
-}
-
-.card-form h3 {
-  color: #ff2d87;
-  margin-bottom: 1.2rem;
-  font-size: 1.2rem;
-}
-
-.form-group {
-  margin-bottom: 1.2rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.6rem;
-  font-weight: 500;
-  color: #555;
-  font-size: 0.95rem;
-}
-
-.form-group input,
-.form-group textarea {
-  width: 100%;
-  padding: 0.85rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: all 0.2s;
-}
-
-.form-group input:focus,
-.form-group textarea:focus {
-  border-color: #ff2d87;
-  box-shadow: 0 0 0 2px rgba(255, 45, 135, 0.1);
-  outline: none;
-}
-
-.error-text {
-  color: #ff4444;
-  font-size: 0.85rem;
-  margin-top: 0.5rem;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 1.2rem;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 1rem;
-  justify-content: flex-end;
-  margin-top: 2rem;
-}
-
-.btn {
-  padding: 0.85rem 1.8rem;
-  border: none;
-  border-radius: 30px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-  transition: all 0.2s;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.btn-primary {
-  background: #ff2d87;
-  color: white;
-  box-shadow: 0 2px 10px rgba(255, 45, 135, 0.3);
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #e02679;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 45, 135, 0.4);
-}
-
-.btn-primary:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-  box-shadow: none;
-  transform: none;
-}
-
-.btn-secondary {
-  background: #333;
-  color: white;
-}
-
-.btn-secondary:hover {
-  background: #222;
-  transform: translateY(-1px);
-}
-
-.confirmation-section {
-  margin-bottom: 1.2rem;
-  padding: 1.2rem;
-  background: #fff9fb;
-  border-radius: 8px;
-  border-left: 4px solid #ff2d87;
-}
-
-.confirmation-section h4 {
-  margin: 0 0 0.8rem 0;
-  color: #ff2d87;
-  font-size: 1.1rem;
-}
-
-.processing-payment {
-  text-align: center;
-  padding: 2rem;
-}
-
-.spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid #ffebf3;
-  border-top: 4px solid #ff2d87;
-  border-radius: 50%;
+.animate-spin {
   animation: spin 1s linear infinite;
-  margin: 0 auto 1.5rem;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.payment-success,
-.payment-error {
-  text-align: center;
-  padding: 2rem;
-}
-
-.success-icon,
-.error-icon {
-  font-size: 4rem;
-  margin-bottom: 1.5rem;
-}
-
-.success-icon {
-  color: #28a745;
-}
-
-.error-icon {
-  color: #dc3545;
-}
-
-.receipt {
-  background: #fff9fb;
-  padding: 1.5rem;
-  border-radius: 8px;
-  margin: 1.5rem 0;
-  text-align: left;
-  border-left: 4px solid #ff2d87;
-}
-
-.error-message {
-  color: #dc3545;
-  margin: 1.5rem 0;
-  font-weight: 500;
-}
-
-.loading-state,
-.error-state {
-  text-align: center;
-  padding: 3rem;
-}
-
-.processing-note {
-  font-size: 0.9rem;
-  color: #888;
-  margin-top: 1rem;
-}
-
-.error-state .error-icon {
-  font-size: 3rem;
-  margin-bottom: 1.5rem;
-  color: #dc3545;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .payment-container {
-    margin: 1rem;
-    padding: 1rem;
+  from {
+    transform: rotate(0deg);
   }
-  
-  .form-row {
-    grid-template-columns: 1fr;
+  to {
+    transform: rotate(360deg);
   }
-  
-  .action-buttons {
-    flex-direction: column;
-  }
-  
-  .btn {
-    width: 100%;
-  }
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.transition-colors {
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
 }
 </style>

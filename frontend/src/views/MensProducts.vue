@@ -606,12 +606,6 @@ onMounted(() => {
                   >
                     NUEVO
                   </span>
-                  <span 
-                    v-if="producto.descuento"
-                    class="bg-[#E57C23] text-white text-xs px-2 py-1 font-bold rounded"
-                  >
-                    -{{ producto.descuento }}%
-                  </span>
                 </div>
                 
                 <!-- Rating Badge -->

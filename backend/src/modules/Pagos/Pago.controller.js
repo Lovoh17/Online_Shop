@@ -5,6 +5,9 @@ import { ObjectId } from 'mongodb';
 export class PagoController {
     constructor(db) {
         this.pagoService = new PagoService(db);
+        this.obtenerDatosPago = this.obtenerDatosPago.bind(this);
+        this.procesarPago = this.procesarPago.bind(this);
+        this.obtenerHistorial = this.obtenerHistorial.bind(this);
     }
 
     async obtenerDatosPago(req, res) {
